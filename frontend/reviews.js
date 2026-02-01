@@ -1,27 +1,35 @@
-// Reviews and Ratings Management
-import { db, auth } from './firebase-config.js';
-import { collection, addDoc, query, where, getDocs, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// Reviews and Ratings Management (Supabase)
 
 // Submit a review for a product
 export async function submitReview(productId, rating, comment) {
-    const user = auth.currentUser;
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+
     if (!user) {
         throw new Error('Must be logged in to submit reviews');
     }
 
-    // Get user data
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    const userData = userDoc.exists() ? userDoc.data() : {};
+    // Get user data from profiles
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
 
     // Add review
-    await addDoc(collection(db, "reviews"), {
-        productId: productId,
-        buyerId: user.uid,
-        buyerName: userData.name || "Anonymous",
-        rating: rating,
-        comment: comment,
-        createdAt: new Date()
-    });
+    const { error: reviewError } = await supabase
+        .from('reviews')
+        .insert([
+            {
+                product_id: productId,
+                buyer_id: user.id,
+                buyer_name: profile?.full_name || "Anonymous",
+                rating: rating,
+                comment: comment
+            }
+        ]);
+
+    if (reviewError) throw reviewError;
 
     // Update product rating
     await updateProductRating(productId);
@@ -29,13 +37,14 @@ export async function submitReview(productId, rating, comment) {
 
 // Get all reviews for a product
 export async function getProductReviews(productId) {
-    const q = query(collection(db, "reviews"), where("productId", "==", productId));
-    const snapshot = await getDocs(q);
+    const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false });
 
-    return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    }));
+    if (error) throw error;
+    return data;
 }
 
 // Update product's average rating
@@ -46,11 +55,15 @@ async function updateProductRating(productId) {
 
     const avgRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
-    const productRef = doc(db, "products", productId);
-    await updateDoc(productRef, {
-        avgRating: avgRating,
-        reviewCount: reviews.length
-    });
+    const { error } = await supabase
+        .from('products')
+        .update({
+            avg_rating: avgRating,
+            review_count: reviews.length
+        })
+        .eq('id', productId);
+
+    if (error) throw error;
 }
 
 // Render star rating

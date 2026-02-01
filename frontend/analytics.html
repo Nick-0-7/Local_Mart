@@ -97,57 +97,66 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
         let sellerId = null;
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!session) {
                 window.location.href = 'index.html';
                 return;
             }
-            sellerId = user.uid;
+            sellerId = session.user.id;
             await loadAnalytics();
         });
 
         async function loadAnalytics() {
             try {
                 // Get all orders containing seller's products
-                const ordersSnapshot = await getDocs(collection(db, "orders"));
-                const productsSnapshot = await getDocs(query(collection(db, "products"), where("sellerId", "==", sellerId)));
+                const { data: orders, error: ordersError } = await supabase
+                    .from('orders')
+                    .select('*');
 
-                const sellerProductIds = productsSnapshot.docs.map(doc => doc.id);
+                const { data: products, error: productsError } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('seller_id', sellerId);
+
+                if (ordersError) throw ordersError;
+                if (productsError) throw productsError;
+
+                const sellerProductIds = products.map(p => p.id);
                 const productMap = {};
-                productsSnapshot.docs.forEach(doc => {
-                    productMap[doc.id] = { ...doc.data(), sales: 0, revenue: 0 };
+                products.forEach(p => {
+                    productMap[p.id] = { ...p, sales: 0, revenue: 0 };
                 });
 
                 let totalRevenue = 0;
                 let totalOrders = 0;
 
-                ordersSnapshot.docs.forEach(orderDoc => {
-                    const order = orderDoc.data();
-                    order.items.forEach(item => {
-                        if (item.sellerId === sellerId) {
-                            totalOrders++;
-                            const itemRevenue = item.price * item.quantity;
-                            totalRevenue += itemRevenue;
+                orders.forEach(order => {
+                    if (order.items && Array.isArray(order.items)) {
+                        order.items.forEach(item => {
+                            // Check if this item belongs to this seller
+                            if (item.seller_id === sellerId) {
+                                totalOrders++;
+                                const itemRevenue = (item.price || 0) * (item.quantity || 0);
+                                totalRevenue += itemRevenue;
 
-                            if (productMap[item.productId]) {
-                                productMap[item.productId].sales += item.quantity;
-                                productMap[item.productId].revenue += itemRevenue;
+                                if (productMap[item.id]) {
+                                    productMap[item.id].sales += item.quantity || 0;
+                                    productMap[item.id].revenue += itemRevenue;
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 });
 
                 // Update stats
                 document.getElementById('totalRevenue').textContent = `₹${totalRevenue.toLocaleString()}`;
                 document.getElementById('totalOrders').textContent = totalOrders;
-                document.getElementById('activeProducts').textContent = sellerProductIds.length;
+                document.getElementById('activeProducts').textContent = products.length;
                 document.getElementById('avgOrderValue').textContent = totalOrders > 0 ? `₹${Math.round(totalRevenue / totalOrders).toLocaleString()}` : '₹0';
 
                 // Top products chart
@@ -162,8 +171,8 @@
                         return `
                         <div style="margin: 1rem 0;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span><strong>${product.title}</strong></span>
-                                <span style="color: var(--muted);">${product.sales} sold | ₹${product.revenue.toLocaleString()}</span>
+                                <span><strong>${product.title || 'Untitled'}</strong></span>
+                                <span style="color: var(--muted);">${product.sales} sold | ₹${(product.revenue || 0).toLocaleString()}</span>
                             </div>
                             <div class="bar" style="width: ${width}%;">
                                 ${width > 20 ? width.toFixed(0) + '%' : ''}
@@ -172,6 +181,7 @@
                     `;
                     }).join('');
                     document.getElementById('noSalesMsg').style.display = 'none';
+                    document.getElementById('topProductsChart').style.display = 'block';
                 } else {
                     document.getElementById('topProductsChart').style.display = 'none';
                     document.getElementById('noSalesMsg').style.display = 'block';
@@ -182,6 +192,7 @@
             }
         }
     </script>
+
 
 </body>
 

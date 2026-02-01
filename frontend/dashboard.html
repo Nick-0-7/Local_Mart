@@ -533,34 +533,36 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { doc, getDoc, collection, addDoc, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { storage } from './firebase-config.js';
-        import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
         import { updateCartBadge } from './cart.js';
 
         let currentUser = null;
         let userData = null;
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!session) {
                 window.location.href = 'login.html';
                 return;
             }
 
-            currentUser = user;
-            document.getElementById('userEmail').textContent = user.email;
+            currentUser = session.user;
+            document.getElementById('userEmail').textContent = currentUser.email;
 
             try {
-                const docRef = doc(db, "users", user.uid);
-                const docSnap = await getDoc(docRef);
+                // Get profile data from Supabase Profiles table
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
 
-                if (docSnap.exists()) {
-                    userData = docSnap.data();
+                if (error) throw error;
 
-                    document.getElementById('userName').textContent = userData.name || userData.businessName || "User";
+                if (profile) {
+                    userData = profile;
+                    document.getElementById('userName').textContent = userData.full_name || "User";
                     document.getElementById('userRole').textContent = userData.role === 'seller' ? 'Seller' : 'Buyer';
 
                     if (userData.role === 'seller') {
@@ -594,10 +596,15 @@
         // Load seller products
         async function loadSellerProducts() {
             try {
-                const q = query(collection(db, "products"), where("sellerId", "==", currentUser.uid));
-                const snapshot = await getDocs(q);
+                const { data: products, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('seller_id', currentUser.id)
+                    .order('created_at', { ascending: false });
 
-                if (snapshot.empty) {
+                if (error) throw error;
+
+                if (!products || products.length === 0) {
                     document.getElementById('myProducts').style.display = 'none';
                     document.getElementById('noProducts').style.display = 'block';
                     return;
@@ -606,7 +613,6 @@
                 document.getElementById('myProducts').style.display = 'grid';
                 document.getElementById('noProducts').style.display = 'none';
 
-                const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 displayProducts(products);
             } catch (error) {
                 console.error("Error loading products:", error);
@@ -616,7 +622,7 @@
         function displayProducts(products) {
             document.getElementById('myProducts').innerHTML = products.map(product => `
             <div class="product-card">
-                <img src="${product.imageUrl || 'https://via.placeholder.com/300x220?text=No+Image'}" 
+                <img src="${product.image_url || 'https://via.placeholder.com/300x220?text=No+Image'}" 
                      alt="${product.title}" class="product-image">
                 <div class="product-info">
                     <span class="product-category">${product.category}</span>
@@ -634,7 +640,12 @@
             if (!confirm('Are you sure you want to delete this product?')) return;
 
             try {
-                await deleteDoc(doc(db, "products", productId));
+                const { error } = await supabase
+                    .from('products')
+                    .delete()
+                    .eq('id', productId);
+
+                if (error) throw error;
                 loadSellerProducts();
             } catch (error) {
                 console.error("Error deleting product:", error);
@@ -668,31 +679,47 @@
             try {
                 let imageUrl = '';
 
-                // Upload image if provided
+                // Upload image if provided (to Supabase Storage 'products' bucket)
                 const imageFile = document.getElementById('imageFile').files[0];
                 if (imageFile) {
-                    const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
-                    await uploadBytes(storageRef, imageFile);
-                    imageUrl = await getDownloadURL(storageRef);
+                    const fileExt = imageFile.name.split('.').pop();
+                    const fileName = `${Date.now()}.${fileExt}`;
+                    const filePath = `products/${fileName}`;
+
+                    const { error: uploadError, data } = await supabase.storage
+                        .from('products')
+                        .upload(filePath, imageFile);
+
+                    if (uploadError) throw uploadError;
+
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('products')
+                        .getPublicUrl(filePath);
+
+                    imageUrl = publicUrl;
                 }
 
                 btn.textContent = "Listing...";
 
-                await addDoc(collection(db, "products"), {
-                    sellerId: currentUser.uid,
-                    sellerName: userData.name || userData.businessName,
-                    title: document.getElementById('title').value,
-                    description: document.getElementById('description').value,
-                    price: parseFloat(document.getElementById('price').value),
-                    quantity: parseInt(document.getElementById('quantity').value),
-                    category: document.getElementById('category').value,
-                    condition: document.getElementById('condition').value,
-                    location: document.getElementById('location').value,
-                    imageUrl: imageUrl,
-                    avgRating: 0,
-                    reviewCount: 0,
-                    createdAt: new Date()
-                });
+                const { error: insertError } = await supabase
+                    .from('products')
+                    .insert([
+                        {
+                            seller_id: currentUser.id,
+                            title: document.getElementById('title').value,
+                            description: document.getElementById('description').value,
+                            price: parseFloat(document.getElementById('price').value),
+                            quantity: parseInt(document.getElementById('quantity').value),
+                            category: document.getElementById('category').value,
+                            condition: document.getElementById('condition').value,
+                            location: document.getElementById('location').value,
+                            image_url: imageUrl,
+                            avg_rating: 0,
+                            review_count: 0
+                        }
+                    ]);
+
+                if (insertError) throw insertError;
 
                 document.getElementById('productForm').reset();
                 document.getElementById('imagePreview').style.display = 'none';
@@ -700,7 +727,7 @@
                 loadSellerProducts();
             } catch (error) {
                 console.error("Error adding product:", error);
-                errorMsg.textContent = "Failed to list product. Make sure Firebase Storage is enabled.";
+                errorMsg.textContent = "Failed to list product. " + error.message;
             } finally {
                 btn.disabled = false;
                 btn.textContent = "🚀 List Product";
@@ -708,10 +735,12 @@
         });
 
         // Logout
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            signOut(auth).then(() => window.location.href = 'index.html');
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
         });
     </script>
+
 
 </body>
 

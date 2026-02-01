@@ -178,22 +178,9 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBGJ5BF61N50ByTiv-C9le5L_kfVKOiZJw",
-            authDomain: "localmart-385ad.firebaseapp.com",
-            projectId: "localmart-385ad",
-            storageBucket: "localmart-385ad.firebasestorage.app",
-            messagingSenderId: "513721658620",
-            appId: "1:513721658620:web:89c8bbb2af0dd51a3ed19f"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -207,24 +194,25 @@
             errorMsg.textContent = '';
 
             try {
-                await signInWithEmailAndPassword(auth, email, password);
+                // Use Supabase Auth to Sign In
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) throw error;
+
+                // Successful login
                 window.location.href = 'dashboard.html';
             } catch (error) {
                 console.error('Login error:', error);
-
-                let message = 'Invalid email or password';
-                if (error.code === 'auth/user-not-found') {
-                    message = 'No account found. Please register first.';
-                } else if (error.code === 'auth/too-many-requests') {
-                    message = 'Too many attempts. Try again later.';
-                }
-
-                errorMsg.textContent = message;
+                errorMsg.textContent = error.message || 'Invalid email or password';
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login';
             }
         });
     </script>
+
 </body>
 
 </html>

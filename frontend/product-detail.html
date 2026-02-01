@@ -83,9 +83,9 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { addToCart, updateCartBadge } from './cart.js';
         import { submitReview, getProductReviews, renderStars } from './reviews.js';
 
@@ -100,16 +100,18 @@
         // Load product
         async function loadProduct() {
             try {
-                const docRef = doc(db, "products", productId);
-                const docSnap = await getDoc(docRef);
+                const { data: product, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('id', productId)
+                    .single();
 
-                if (!docSnap.exists()) {
+                if (error || !product) {
                     alert('Product not found');
                     window.location.href = 'marketplace.html';
                     return;
                 }
 
-                const product = { id: docSnap.id, ...docSnap.data() };
                 displayProduct(product);
                 loadReviews();
             } catch (error) {
@@ -118,13 +120,13 @@
         }
 
         function displayProduct(product) {
-            const avgRating = product.avgRating || 0;
-            const reviewCount = product.reviewCount || 0;
+            const avgRating = product.avg_rating || 0;
+            const reviewCount = product.review_count || 0;
 
             document.getElementById('productDetail').innerHTML = `
             <div class="product-detail">
                 <div>
-                    <img src="${product.imageUrl || 'https://via.placeholder.com/500?text=No+Image'}" 
+                    <img src="${product.image_url || 'https://via.placeholder.com/500?text=No+Image'}" 
                          alt="${product.title}" class="product-detail-image">
                 </div>
                 <div>
@@ -136,15 +138,14 @@
                             <span style="margin-left: 0.5rem; color: var(--muted);">${avgRating.toFixed(1)} (${reviewCount} reviews)</span>
                         </div>
                     ` : ''}
-                    <p class="product-price" style="font-size: 2rem; margin: 1rem 0;">₹${product.price.toLocaleString()}</p>
+                    <p class="product-price" style="font-size: 2rem; margin: 1rem 0;">₹${product.price ? product.price.toLocaleString() : 0}</p>
                     
-                    <p style="color: var(--muted); margin: 1rem 0;">${product.description}</p>
+                    <p style="color: var(--muted); margin: 1rem 0;">${product.description || ''}</p>
                     
                     <div style="background: #f7f9fc; padding: 1rem; border-radius: 8px; margin: 1.5rem 0;">
-                        <p style="margin: 0.5rem 0;"><strong>Condition:</strong> ${product.condition}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Location:</strong> ${product.location}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Seller:</strong> ${product.sellerName}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Available:</strong> ${product.quantity} units</p>
+                        <p style="margin: 0.5rem 0;"><strong>Condition:</strong> ${product.condition || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Location:</strong> ${product.location || 'Local'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Available:</strong> ${product.quantity || 0} units</p>
                     </div>
 
                     <button class="btn btn-primary" onclick="handleAddToCart()" style="width: 100%; font-size: 1.1rem; padding: 1rem;">
@@ -162,21 +163,21 @@
                 const reviews = await getProductReviews(productId);
                 const container = document.getElementById('reviewsContainer');
 
-                if (reviews.length === 0) {
+                if (!reviews || reviews.length === 0) {
                     container.innerHTML = '<p style="color: var(--muted);">No reviews yet. Be the first to review this product!</p>';
                     return;
                 }
 
                 container.innerHTML = reviews.map(review => {
-                    const date = review.createdAt.toDate ? review.createdAt.toDate() : new Date(review.createdAt);
+                    const date = new Date(review.created_at);
                     return `
                         <div style="padding: 1rem 0; border-bottom: 1px solid #f1f5f9;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                <strong>${review.buyerName}</strong>
+                                <strong>${review.buyer_name || 'Anonymous'}</strong>
                                 <span style="color: var(--muted); font-size: 0.875rem;">${date.toLocaleDateString()}</span>
                             </div>
                             <div style="margin-bottom: 0.5rem;">${renderStars(review.rating)}</div>
-                            <p style="margin: 0; color: var(--muted);">${review.comment}</p>
+                            <p style="margin: 0; color: var(--muted);">${review.comment || ''}</p>
                         </div>
                     `;
                 }).join('');
@@ -213,6 +214,7 @@
         loadProduct();
         updateCartBadge();
     </script>
+
 
 </body>
 
