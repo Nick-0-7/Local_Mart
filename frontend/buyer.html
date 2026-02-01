@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join as a Buyer | LocalMart</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- EmailJS for sending OTP emails -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Animated background elements */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+      top: -400px;
+      right: -400px;
+      animation: float 20s infinite ease-in-out;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+      bottom: -300px;
+      left: -300px;
+      animation: float 15s infinite ease-in-out reverse;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+
+      50% {
+        transform: translate(50px, 50px) rotate(180deg);
+      }
+    }
+
+    .auth-wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .auth-container {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 3rem;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .auth-icon {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+      font-size: 2rem;
+    }
+
+    .auth-title {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #10b981 0%, #f97316 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .auth-subtitle {
+      color: #6b7280;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #374151;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: white;
+      box-sizing: border-box;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #10b981;
+    }
+
+    .checkbox-group label {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #6b7280;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .footer-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .footer-link a {
+      color: #10b981;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+
+    .footer-link a:hover {
+      color: #f97316;
+    }
+
+    .error-msg {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .error-msg:not(:empty) {
+      display: block;
+    }
+
+    @media (max-width: 600px) {
+      .auth-container {
+        padding: 2rem 1.5rem;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="auth-wrapper">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="auth-icon">🛍️</div>
+        <h1 class="auth-title">Join as a Buyer</h1>
+        <p class="auth-subtitle">Start shopping from local sellers near you</p>
+      </div>
+
+      <form id="buyerForm">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="name" class="form-control" placeholder="John Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label>Email Address</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="email" id="email" class="form-control" placeholder="john@example.com" required
+              style="flex: 1;">
+            <button type="button" id="sendOtpBtn" class="btn-secondary"
+              style="white-space: nowrap; padding: 0.95rem 1.5rem; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer;">Send
+              OTP</button>
+          </div>
+        </div>
+
+        <div class="form-group" id="otpGroup" style="display: none;">
+          <label>Enter OTP</label>
+          <input type="text" id="otp" class="form-control" placeholder="Enter 6-digit OTP" maxlength="6"
+            pattern="[0-9]{6}">
+          <small style="color: #6b7280; display: block; margin-top: 0.5rem;" id="otpStatus">OTP sent to your email.
+            Valid for 10 minutes.</small>
+        </div>
+
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <input type="tel" id="mobile" class="form-control" placeholder="+91 9876543210" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>State</label>
+            <select id="state" class="form-control" onchange="loadCities()" required>
+              <option value="">Select State</option>
+              <option>Maharashtra</option>
+              <option>Karnataka</option>
+              <option>Delhi</option>
+              <option>Tamil Nadu</option>
+              <option>Gujarat</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>City</label>
+            <select id="city" class="form-control" required>
+              <option value="">Select City</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" class="form-control" placeholder="Create a strong password" required>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="terms" required>
+          <label for="terms">I agree to Terms & Conditions</label>
+        </div>
+
+        <div class="error-msg" id="errorMsg"></div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">Create Buyer Account</button>
+      </form>
+
+      <div class="footer-link">
+        <a href="index.html">← Back to Home</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function loadCities() {
+      const state = document.getElementById('state').value;
+      const citySelect = document.getElementById('city');
+      const cities = {
+        'Maharashtra': ['Mumbai', 'Pune', 'Nagpur'],
+        'Karnataka': ['Bangalore', 'Mysore', 'Mangalore'],
+        'Delhi': ['New Delhi', 'Dwarka', 'Rohini'],
+        'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai'],
+        'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara']
+      };
+
+      citySelect.innerHTML = '<option value="">Select City</option>';
+      if (cities[state]) {
+        cities[state].forEach(city => {
+          const option = document.createElement('option');
+          option.value = city;
+          option.textContent = city;
+          citySelect.appendChild(option);
+        });
+      }
+    }
+  </script>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { generateOTP, storeOTP, verifyOTP, sendOTPEmail } from './email-service.js';
+
+    let emailVerified = false;
+
+    // Send OTP Button Handler
+    document.getElementById('sendOtpBtn').addEventListener('click', async () => {
+      const emailInput = document.getElementById('email');
+      const email = emailInput.value;
+      const sendOtpBtn = document.getElementById('sendOtpBtn');
+      const otpGroup = document.getElementById('otpGroup');
+      const otpStatus = document.getElementById('otpStatus');
+
+      if (!email || !emailInput.checkValidity()) {
+        alert('Please enter a valid email address');
+        return;
+      }
+
+      sendOtpBtn.disabled = true;
+      sendOtpBtn.textContent = 'Sending...';
+
+      try {
+        const otp = generateOTP();
+        storeOTP(email, otp);
+
+        const result = await sendOTPEmail(email, otp);
+
+        if (result.success) {
+          otpGroup.style.display = 'block';
+          otpStatus.textContent = '✅ OTP sent to your email. Valid for 10 minutes.';
+          otpStatus.style.color = '#10b981';
+          sendOtpBtn.textContent = 'Resend OTP';
+          emailInput.readOnly = true;
+        } else {
+          // Email sending failed - show error
+          alert(`❌ Email Sending Failed\n\n${result.message}\n\nPlease fix the issue and try again.`);
+          sendOtpBtn.textContent = 'Send OTP';
+          // Don't show OTP field on failure
+          otpGroup.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error sending OTP:', error);
+        alert('❌ Error sending OTP\n\nPlease check your internet connection and try again.');
+        sendOtpBtn.textContent = 'Send OTP';
+        otpGroup.style.display = 'none';
+      } finally {
+        sendOtpBtn.disabled = false;
+      }
+    });
+
+    // Form Submit Handler
+    document.getElementById("buyerForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const errorMsg = document.getElementById('errorMsg');
+      const email = document.getElementById('email').value;
+      const otpInput = document.getElementById('otp').value;
+
+      // Check if OTP was sent
+      if (!document.getElementById('otpGroup').style.display || document.getElementById('otpGroup').style.display === 'none') {
+        errorMsg.textContent = 'Please verify your email by clicking "Send OTP" button first.';
+        return;
+      }
+
+      // Verify OTP
+      if (!otpInput) {
+        errorMsg.textContent = 'Please enter the OTP sent to your email.';
+        return;
+      }
+
+      const otpResult = verifyOTP(email, otpInput);
+      if (!otpResult.success) {
+        errorMsg.textContent = otpResult.message;
+        return;
+      }
+
+      // OTP verified, proceed with registration
+      btn.disabled = true;
+      btn.textContent = "Creating Account...";
+      errorMsg.textContent = "";
+
+      const name = document.getElementById('name').value;
+      const mobile = document.getElementById('mobile').value;
+      const state = document.getElementById('state').value;
+      const city = document.getElementById('city').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          name: name,
+          email: email,
+          mobile: mobile,
+          state: state,
+          city: city,
+          role: 'buyer',
+          emailVerified: true, // Email verified via OTP
+          createdAt: new Date().toISOString()
+        });
+
+        alert('✅ Account Created Successfully!\n\nYour email has been verified. Redirecting to dashboard...');
+        window.location.href = "dashboard.html";
+
+      } catch (error) {
+        console.error(error);
+        let message = error.message;
+        if (error.code === 'auth/email-already-in-use') {
+          message = 'This email is already registered. Please login instead.';
+        } else if (error.code === 'auth/weak-password') {
+          message = 'Password should be at least 6 characters.';
+        }
+        errorMsg.textContent = message;
+        btn.disabled = false;
+        btn.textContent = "Create Buyer Account";
+      }
+    });
+  </script>
+
+</body>
+
+</html>
