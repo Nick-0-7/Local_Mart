@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Product Details | LocalMart</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            background: #f7f9fc;
+        }
+
+        .product-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+
+        .product-detail-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .product-detail {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">LocalMart</a>
+        <ul class="nav-links">
+            <li><a href="marketplace.html">Marketplace</a></li>
+            <li><a href="orders.html">My Orders</a></li>
+            <li class="cart-icon">
+                <a href="cart.html">🛒 Cart</a>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div id="productDetail"></div>
+
+        <!-- Reviews Section -->
+        <div style="background: white; padding: 2rem; border-radius: 12px; margin-top: 2rem;">
+            <h2>Customer Reviews</h2>
+            <div id="reviewsContainer"></div>
+
+            <!-- Review Form -->
+            <div id="reviewForm" style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #f1f5f9;">
+                <h3>Write a Review</h3>
+                <form id="submitReviewForm">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Rating</label>
+                        <select id="rating" class="form-control" required>
+                            <option value="">Select rating</option>
+                            <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                            <option value="4">⭐⭐⭐⭐ Good</option>
+                            <option value="3">⭐⭐⭐ Average</option>
+                            <option value="2">⭐⭐ Poor</option>
+                            <option value="1">⭐ Terrible</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Your Review</label>
+                        <textarea id="reviewComment" class="form-control" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { addToCart, updateCartBadge } from './cart.js';
+        import { submitReview, getProductReviews, renderStars } from './reviews.js';
+
+        // Get product ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        if (!productId) {
+            window.location.href = 'marketplace.html';
+        }
+
+        // Load product
+        async function loadProduct() {
+            try {
+                const docRef = doc(db, "products", productId);
+                const docSnap = await getDoc(docRef);
+
+                if (!docSnap.exists()) {
+                    alert('Product not found');
+                    window.location.href = 'marketplace.html';
+                    return;
+                }
+
+                const product = { id: docSnap.id, ...docSnap.data() };
+                displayProduct(product);
+                loadReviews();
+            } catch (error) {
+                console.error("Error loading product:", error);
+            }
+        }
+
+        function displayProduct(product) {
+            const avgRating = product.avgRating || 0;
+            const reviewCount = product.reviewCount || 0;
+
+            document.getElementById('productDetail').innerHTML = `
+            <div class="product-detail">
+                <div>
+                    <img src="${product.imageUrl || 'https://via.placeholder.com/500?text=No+Image'}" 
+                         alt="${product.title}" class="product-detail-image">
+                </div>
+                <div>
+                    <span class="product-category">${product.category}</span>
+                    <h1 style="margin: 0.5rem 0;">${product.title}</h1>
+                    ${avgRating > 0 ? `
+                        <div style="margin: 0.5rem 0;">
+                            ${renderStars(avgRating, "1.5rem")}
+                            <span style="margin-left: 0.5rem; color: var(--muted);">${avgRating.toFixed(1)} (${reviewCount} reviews)</span>
+                        </div>
+                    ` : ''}
+                    <p class="product-price" style="font-size: 2rem; margin: 1rem 0;">₹${product.price.toLocaleString()}</p>
+                    
+                    <p style="color: var(--muted); margin: 1rem 0;">${product.description}</p>
+                    
+                    <div style="background: #f7f9fc; padding: 1rem; border-radius: 8px; margin: 1.5rem 0;">
+                        <p style="margin: 0.5rem 0;"><strong>Condition:</strong> ${product.condition}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Location:</strong> ${product.location}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Seller:</strong> ${product.sellerName}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Available:</strong> ${product.quantity} units</p>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="handleAddToCart()" style="width: 100%; font-size: 1.1rem; padding: 1rem;">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        `;
+
+            window.currentProduct = product;
+        }
+
+        async function loadReviews() {
+            try {
+                const reviews = await getProductReviews(productId);
+                const container = document.getElementById('reviewsContainer');
+
+                if (reviews.length === 0) {
+                    container.innerHTML = '<p style="color: var(--muted);">No reviews yet. Be the first to review this product!</p>';
+                    return;
+                }
+
+                container.innerHTML = reviews.map(review => {
+                    const date = review.createdAt.toDate ? review.createdAt.toDate() : new Date(review.createdAt);
+                    return `
+                        <div style="padding: 1rem 0; border-bottom: 1px solid #f1f5f9;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <strong>${review.buyerName}</strong>
+                                <span style="color: var(--muted); font-size: 0.875rem;">${date.toLocaleDateString()}</span>
+                            </div>
+                            <div style="margin-bottom: 0.5rem;">${renderStars(review.rating)}</div>
+                            <p style="margin: 0; color: var(--muted);">${review.comment}</p>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error("Error loading reviews:", error);
+            }
+        }
+
+        // Submit review
+        document.getElementById('submitReviewForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rating = parseInt(document.getElementById('rating').value);
+            const comment = document.getElementById('reviewComment').value;
+
+            try {
+                await submitReview(productId, rating, comment);
+                alert('Review submitted successfully!');
+                document.getElementById('submitReviewForm').reset();
+                loadReviews();
+                loadProduct(); // Refresh to update rating
+            } catch (error) {
+                console.error("Error submitting review:", error);
+                alert(error.message || 'Failed to submit review');
+            }
+        });
+
+        window.handleAddToCart = function () {
+            if (window.currentProduct) {
+                addToCart(window.currentProduct);
+                alert('Added to cart!');
+            }
+        };
+
+        loadProduct();
+        updateCartBadge();
+    </script>
+
+</body>
+
+</html>

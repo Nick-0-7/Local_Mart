@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | LocalMart</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            background: #f7f9fc;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 3px solid transparent;
+            font-size: 1rem;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .product-form {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">LocalMart Dashboard</a>
+        <ul class="nav-links">
+            <li><a href="marketplace.html">Marketplace</a></li>
+            <li><a href="analytics.html">📊 Analytics</a></li>
+            <li class="cart-icon">
+                <a href="cart.html">🛒 Cart</a>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </li>
+            <li><button id="logoutBtn" class="logout-btn"
+                    style="background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Logout</button>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h2 style="margin: 0;">Welcome, <span id="userName">User</span> <span id="userRole"
+                    style="background: var(--secondary); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem;">...</span>
+            </h2>
+            <p id="userEmail" style="color: var(--muted); margin-top: 5px;"></p>
+        </div>
+
+        <!-- Buyer Content -->
+        <div id="buyerContent" style="display: none;">
+            <h3>Quick Actions</h3>
+            <a href="marketplace.html" class="btn btn-primary"
+                style="display: inline-block; margin-bottom: 1rem;">Browse Marketplace</a>
+            <a href="cart.html" class="btn"
+                style="display: inline-block; margin-bottom: 1rem; background: white; color: var(--primary); border: 2px solid var(--primary);">View
+                Cart</a>
+        </div>
+
+        <!-- Seller Content -->
+        <div id="sellerContent" style="display: none;">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('products')">My Products</button>
+                <button class="tab" onclick="switchTab('add')">Add New Product</button>
+            </div>
+
+            <!-- Products List Tab -->
+            <div id="productsTab" class="tab-content active">
+                <div id="myProducts" class="product-grid"></div>
+                <div id="noProducts" class="empty-state" style="display: none;">
+                    <h3>No products yet</h3>
+                    <p>Click "Add New Product" to list your first item!</p>
+                </div>
+            </div>
+
+            <!-- Add Product Tab -->
+            <div id="addTab" class="tab-content">
+                <div class="product-form">
+                    <h3>List a New Product</h3>
+                    <form id="productForm">
+                        <div class="form-group">
+                            <label>Product Title</label>
+                            <input type="text" id="title" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="description" class="form-control" rows="4" required></textarea>
+                        </div>
+
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label>Price (₹)</label>
+                                <input type="number" id="price" class="form-control" min="1" required>
+                            </div>
+                            <div>
+                                <label>Quantity</label>
+                                <input type="number" id="quantity" class="form-control" min="1" value="1" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label>Category</label>
+                                <select id="category" class="form-control" required>
+                                    <option value="">Select Category</option>
+                                    <option value="electronics">Electronics</option>
+                                    <option value="furniture">Furniture</option>
+                                    <option value="clothing">Clothing</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Condition</label>
+                                <select id="condition" class="form-control" required>
+                                    <option value="">Select Condition</option>
+                                    <option value="new">New</option>
+                                    <option value="like-new">Like New</option>
+                                    <option value="good">Good</option>
+                                    <option value="fair">Fair</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="location" class="form-control" placeholder="City, State" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Product Image</label>
+                            <input type="file" id="imageFile" class="form-control" accept="image/*">
+                            <small style="color: var(--muted);">Upload a product image (optional)</small>
+                            <div id="imagePreview" style="margin-top: 1rem; display: none;">
+                                <img id="previewImg" style="max-width: 200px; border-radius: 8px;">
+                            </div>
+                        </div>
+
+                        <div class="error-msg" id="errorMsg"></div>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">List Product</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, getDoc, collection, addDoc, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { updateCartBadge } from './cart.js';
+
+        let currentUser = null;
+        let userData = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+
+            try {
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    userData = docSnap.data();
+                    document.getElementById('userName').textContent = userData.name || userData.businessName || "User";
+                    document.getElementById('userRole').textContent = userData.role || "Member";
+
+                    if (userData.role === 'seller') {
+                        document.getElementById('sellerContent').style.display = 'block';
+                        loadSellerProducts();
+                    } else {
+                        document.getElementById('buyerContent').style.display = 'block';
+                    }
+                }
+            } catch (e) {
+                console.error("Error fetching user data:", e);
+            }
+
+            updateCartBadge();
+        });
+
+        // Tab switching
+        window.switchTab = function (tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            if (tab === 'products') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('productsTab').classList.add('active');
+            } else {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('addTab').classList.add('active');
+            }
+        };
+
+        // Load seller products
+        async function loadSellerProducts() {
+            try {
+                const q = query(collection(db, "products"), where("sellerId", "==", currentUser.uid));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    document.getElementById('myProducts').style.display = 'none';
+                    document.getElementById('noProducts').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('myProducts').style.display = 'grid';
+                document.getElementById('noProducts').style.display = 'none';
+
+                const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                displayProducts(products);
+            } catch (error) {
+                console.error("Error loading products:", error);
+            }
+        }
+
+        function displayProducts(products) {
+            document.getElementById('myProducts').innerHTML = products.map(product => `
+            <div class="product-card">
+                <img src="${product.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                     alt="${product.title}" class="product-image">
+                <div class="product-info">
+                    <span class="product-category">${product.category}</span>
+                    <h3 class="product-title">${product.title}</h3>
+                    <p class="product-price">₹${product.price.toLocaleString()}</p>
+                    <p style="color: var(--muted); font-size: 0.9rem;">Stock: ${product.quantity}</p>
+                    <button onclick="deleteProduct('${product.id}')" class="btn" style="width: 100%; background: #ef4444; color: white; margin-top: 0.5rem;">Delete</button>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        // Delete product
+        window.deleteProduct = async function (productId) {
+            if (!confirm('Are you sure you want to delete this product?')) return;
+
+            try {
+                await deleteDoc(doc(db, "products", productId));
+                alert('Product deleted!');
+                loadSellerProducts();
+            } catch (error) {
+                console.error("Error deleting product:", error);
+                alert('Failed to delete product');
+            }
+        };
+
+        // Image preview
+        document.getElementById('imageFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Add product
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('errorMsg');
+
+            btn.disabled = true;
+            btn.textContent = "Uploading...";
+            errorMsg.textContent = "";
+
+            try {
+                let imageUrl = '';
+
+                // Upload image if provided
+                const imageFile = document.getElementById('imageFile').files[0];
+                if (imageFile) {
+                    const { storage } = await import('./firebase-config.js');
+                    const { ref, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js");
+
+                    const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
+                    await uploadBytes(storageRef, imageFile);
+                    imageUrl = await getDownloadURL(storageRef);
+                }
+
+                btn.textContent = "Listing...";
+
+                await addDoc(collection(db, "products"), {
+                    sellerId: currentUser.uid,
+                    sellerName: userData.name || userData.businessName,
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    price: parseFloat(document.getElementById('price').value),
+                    quantity: parseInt(document.getElementById('quantity').value),
+                    category: document.getElementById('category').value,
+                    condition: document.getElementById('condition').value,
+                    location: document.getElementById('location').value,
+                    imageUrl: imageUrl,
+                    avgRating: 0,
+                    reviewCount: 0,
+                    createdAt: new Date()
+                });
+
+                alert('Product listed successfully!');
+                document.getElementById('productForm').reset();
+                document.getElementById('imagePreview').style.display = 'none';
+                switchTab('products');
+                loadSellerProducts();
+            } catch (error) {
+                console.error("Error adding product:", error);
+                errorMsg.textContent = "Failed to list product. Make sure Firebase Storage is enabled.";
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "List Product";
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            signOut(auth).then(() => window.location.href = 'index.html');
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Seller Analytics | LocalMart</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            background: #f7f9fc;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .bar {
+            height: 30px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            padding-left: 0.5rem;
+            color: white;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">LocalMart</a>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">← Back to Dashboard</a></li>
+            <li><a href="marketplace.html">Marketplace</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Seller Analytics</h1>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <p class="stat-label">Total Revenue</p>
+                <p class="stat-value" id="totalRevenue">₹0</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Total Orders</p>
+                <p class="stat-value" id="totalOrders">0</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Active Products</p>
+                <p class="stat-value" id="activeProducts">0</p>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">Avg Order Value</p>
+                <p class="stat-value" id="avgOrderValue">₹0</p>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h2>Top 5 Products by Sales</h2>
+            <div id="topProductsChart"></div>
+            <p id="noSalesMsg" style="color: var(--muted); display: none;">No sales data yet</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        let sellerId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            sellerId = user.uid;
+            await loadAnalytics();
+        });
+
+        async function loadAnalytics() {
+            try {
+                // Get all orders containing seller's products
+                const ordersSnapshot = await getDocs(collection(db, "orders"));
+                const productsSnapshot = await getDocs(query(collection(db, "products"), where("sellerId", "==", sellerId)));
+
+                const sellerProductIds = productsSnapshot.docs.map(doc => doc.id);
+                const productMap = {};
+                productsSnapshot.docs.forEach(doc => {
+                    productMap[doc.id] = { ...doc.data(), sales: 0, revenue: 0 };
+                });
+
+                let totalRevenue = 0;
+                let totalOrders = 0;
+
+                ordersSnapshot.docs.forEach(orderDoc => {
+                    const order = orderDoc.data();
+                    order.items.forEach(item => {
+                        if (item.sellerId === sellerId) {
+                            totalOrders++;
+                            const itemRevenue = item.price * item.quantity;
+                            totalRevenue += itemRevenue;
+
+                            if (productMap[item.productId]) {
+                                productMap[item.productId].sales += item.quantity;
+                                productMap[item.productId].revenue += itemRevenue;
+                            }
+                        }
+                    });
+                });
+
+                // Update stats
+                document.getElementById('totalRevenue').textContent = `₹${totalRevenue.toLocaleString()}`;
+                document.getElementById('totalOrders').textContent = totalOrders;
+                document.getElementById('activeProducts').textContent = sellerProductIds.length;
+                document.getElementById('avgOrderValue').textContent = totalOrders > 0 ? `₹${Math.round(totalRevenue / totalOrders).toLocaleString()}` : '₹0';
+
+                // Top products chart
+                const topProducts = Object.values(productMap)
+                    .sort((a, b) => b.sales - a.sales)
+                    .slice(0, 5);
+
+                if (topProducts.length > 0 && topProducts[0].sales > 0) {
+                    const maxSales = topProducts[0].sales;
+                    document.getElementById('topProductsChart').innerHTML = topProducts.map(product => {
+                        const width = (product.sales / maxSales) * 100;
+                        return `
+                        <div style="margin: 1rem 0;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span><strong>${product.title}</strong></span>
+                                <span style="color: var(--muted);">${product.sales} sold | ₹${product.revenue.toLocaleString()}</span>
+                            </div>
+                            <div class="bar" style="width: ${width}%;">
+                                ${width > 20 ? width.toFixed(0) + '%' : ''}
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                    document.getElementById('noSalesMsg').style.display = 'none';
+                } else {
+                    document.getElementById('topProductsChart').style.display = 'none';
+                    document.getElementById('noSalesMsg').style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error("Error loading analytics:", error);
+            }
+        }
+    </script>
+
+</body>
+
+</html>
