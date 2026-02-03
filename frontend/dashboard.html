@@ -548,45 +548,45 @@
                     </form>
                 </div>
             </div>
-            <<<<<<< HEAD <!-- Store Settings Tab -->
-                <div id="settingsTab" class="tab-content">
-                    <div class="product-form">
-                        <h2 class="form-section-title">Store Settings</h2>
-                        <form id="storeSettingsForm">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Opening Time</label>
-                                    <input type="time" id="openTime" class="form-control" required>
-                                    <small id="openTimeDisplay" style="color: #6b7280; font-weight: 600;"></small>
-                                </div>
-                                <div class="form-group">
-                                    <label>Closing Time</label>
-                                    <input type="time" id="closeTime" class="form-control" required>
-                                    <small id="closeTimeDisplay" style="color: #6b7280; font-weight: 600;"></small>
-                                </div>
-                            </div>
-
+            <!-- Store Settings Tab -->
+            <div id="settingsTab" class="tab-content">
+                <div class="product-form">
+                    <h2 class="form-section-title">Store Settings</h2>
+                    <form id="storeSettingsForm">
+                        <div class="form-row">
                             <div class="form-group">
-                                <label>Store Location (Search or Click on map)</label>
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                    <input type="text" id="locationSearch" class="form-control"
-                                        placeholder="Search city, area, or address...">
-                                    <button type="button" class="btn-primary" id="searchLocationBtn"
-                                        style="padding: 0.75rem 1rem;">🔍</button>
-                                </div>
-                                <div id="map"></div>
-                                <input type="hidden" id="latitude">
-                                <input type="hidden" id="longitude">
-                                <p id="locationStatus" style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">
-                                    Selected: <span id="latDisplay">-</span>, <span id="lngDisplay">-</span>
-                                </p>
+                                <label>Opening Time</label>
+                                <input type="time" id="openTime" class="form-control" required>
+                                <small id="openTimeDisplay" style="color: #6b7280; font-weight: 600;"></small>
                             </div>
+                            <div class="form-group">
+                                <label>Closing Time</label>
+                                <input type="time" id="closeTime" class="form-control" required>
+                                <small id="closeTimeDisplay" style="color: #6b7280; font-weight: 600;"></small>
+                            </div>
+                        </div>
 
-                            <div class="error-msg" id="settingsErrorMsg"></div>
-                            <button type="submit" class="btn-primary" id="saveSettingsBtn">💾 Save Settings</button>
-                        </form>
-                    </div>
+                        <div class="form-group">
+                            <label>Store Location (Search or Click on map)</label>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <input type="text" id="locationSearch" class="form-control"
+                                    placeholder="Search city, area, or address...">
+                                <button type="button" class="btn-primary" id="searchLocationBtn"
+                                    style="padding: 0.75rem 1rem;">🔍</button>
+                            </div>
+                            <div id="map"></div>
+                            <input type="hidden" id="latitude">
+                            <input type="hidden" id="longitude">
+                            <p id="locationStatus" style="color: #6b7280; font-size: 0.9rem; margin-top: 0.5rem;">
+                                Selected: <span id="latDisplay">-</span>, <span id="lngDisplay">-</span>
+                            </p>
+                        </div>
+
+                        <div class="error-msg" id="settingsErrorMsg"></div>
+                        <button type="submit" class="btn-primary" id="saveSettingsBtn">💾 Save Settings</button>
+                    </form>
                 </div>
+            </div>
         </div>
     </div>
 
