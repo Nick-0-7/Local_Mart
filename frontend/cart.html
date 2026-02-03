@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Shopping Cart | LocalMart</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            background: #f7f9fc;
+        }
+
+        .cart-summary {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+            position: sticky;
+            top: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">LocalMart</a>
+        <ul class="nav-links">
+            <li><a href="marketplace.html">Marketplace</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Shopping Cart</h1>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+            <div>
+                <div id="cartItems"></div>
+
+                <div id="emptyCart" class="empty-state" style="display: none;">
+                    <h2>Your cart is empty</h2>
+                    <p>Browse our marketplace to find amazing products!</p>
+                    <a href="marketplace.html" class="btn btn-primary"
+                        style="display: inline-block; margin-top: 1rem;">Browse Products</a>
+                </div>
+            </div>
+
+            <div id="cartSummarySection" style="display: none;">
+                <div class="cart-summary">
+                    <h3>Order Summary</h3>
+                    <div style="margin: 1rem 0;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">₹0</span>
+                        </div>
+                        <hr style="border: none; border-top: 1px solid #e2e8f0;">
+                        <div
+                            style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: bold; margin-top: 1rem;">
+                            <span>Total:</span>
+                            <span id="total">₹0</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="checkout()">Proceed to
+                        Checkout</button>
+                    <button onclick="clearCartHandler()"
+                        style="margin-top: 0.5rem; background: white; color: #ef4444; border: 1px solid #ef4444; width: 100%; padding: 0.75rem; border-radius: 8px; cursor: pointer;">Clear
+                        Cart</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script type="module">
+        import { getCart, updateQuantity, removeFromCart, getCartTotal, clearCart, updateCartBadge } from './cart.js';
+
+        function renderCart() {
+            const cart = getCart();
+            const cartItems = document.getElementById('cartItems');
+            const emptyCart = document.getElementById('emptyCart');
+            const summarySection = document.getElementById('cartSummarySection');
+
+            if (cart.length === 0) {
+                cartItems.innerHTML = '';
+                emptyCart.style.display = 'block';
+                summarySection.style.display = 'none';
+                return;
+            }
+
+            emptyCart.style.display = 'none';
+            summarySection.style.display = 'block';
+
+            cartItems.innerHTML = cart.map(item => `
+            <div class="cart-item">
+                <img src="${item.image_url || 'https://via.placeholder.com/80'}" alt="${item.title}" class="cart-item-image">
+                <div class="cart-item-details">
+                    <h3 style="margin: 0 0 0.5rem 0;">${item.title}</h3>
+                    <p style="color: var(--muted); margin: 0;">Seller ID: ${item.seller_id || 'N/A'}</p>
+                    <p style="font-weight: bold; color: var(--primary); margin: 0.5rem 0;">₹${item.price.toLocaleString()}</p>
+                </div>
+                <div class="quantity-controls">
+                    <button class="quantity-btn" onclick="changeQuantity('${item.id}', ${item.quantity - 1})">-</button>
+                    <span style="min-width: 40px; text-align: center;">${item.quantity}</span>
+                    <button class="quantity-btn" onclick="changeQuantity('${item.id}', ${item.quantity + 1})">+</button>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-weight: bold; margin: 0;">₹${(item.price * item.quantity).toLocaleString()}</p>
+                    <button onclick="removeItem('${item.id}')" style="margin-top: 0.5rem; background: none; border: none; color: #ef4444; cursor: pointer; text-decoration: underline;">Remove</button>
+                </div>
+            </div>
+        `).join('');
+
+            const total = getCartTotal();
+            document.getElementById('subtotal').textContent = `₹${total.toLocaleString()}`;
+            document.getElementById('total').textContent = `₹${total.toLocaleString()}`;
+        }
+
+        window.changeQuantity = function (productId, newQuantity) {
+            updateQuantity(productId, newQuantity);
+            renderCart();
+        };
+
+        window.removeItem = function (productId) {
+            removeFromCart(productId);
+            renderCart();
+        };
+
+        window.clearCartHandler = function () {
+            if (confirm('Are you sure you want to clear your cart?')) {
+                clearCart();
+                renderCart();
+            }
+        };
+
+        window.checkout = async function () {
+            const cart = getCart();
+            if (cart.length === 0) return;
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = "Processing...";
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const user = session?.user;
+
+                if (!user) {
+                    alert('Please login to checkout');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Get profile data
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('full_name')
+                    .eq('id', user.id)
+                    .single();
+
+                // Create order in Supabase
+                const { error: orderError } = await supabase
+                    .from('orders')
+                    .insert([
+                        {
+                            buyer_id: user.id,
+                            items: cart.map(item => ({
+                                id: item.id,
+                                title: item.title,
+                                price: item.price,
+                                quantity: item.quantity,
+                                seller_id: item.seller_id,
+                                image_url: item.image_url
+                            })),
+                            total_amount: getCartTotal(),
+                            status: "pending"
+                        }
+                    ]);
+
+                if (orderError) throw orderError;
+
+                clearCart();
+                alert('Order placed successfully! 🎉');
+                window.location.href = 'orders.html';
+            } catch (error) {
+                console.error("Checkout error:", error);
+                alert('Failed to place order. ' + (error.message || 'Please try again.'));
+                btn.disabled = false;
+                btn.textContent = "Proceed to Checkout";
+            }
+        };
+
+        // Initial render
+        renderCart();
+        updateCartBadge();
+    </script>
+
+
+</body>
+
+</html>

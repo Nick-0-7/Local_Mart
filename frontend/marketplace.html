@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Marketplace | LocalMart</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            background: #f7f9fc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="nav-brand">LocalMart</a>
+        <ul class="nav-links">
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li class="cart-icon">
+                <a href="cart.html">🛒 Cart</a>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </li>
+            <li><button id="logoutBtn" class="logout-btn">Logout</button></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h1>Browse Products</h1>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
+            <select id="categoryFilter" class="filter-select">
+                <option value="">All Categories</option>
+                <option value="electronics">Electronics</option>
+                <option value="furniture">Furniture</option>
+                <option value="clothing">Clothing</option>
+            </select>
+        </div>
+
+        <div id="productsContainer" class="product-grid">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h2>No products found</h2>
+            <p>Try adjusting your search or filters</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script type="module">
+        import { addToCart, updateCartBadge } from './cart.js';
+
+        let allProducts = [];
+
+        // Auth check
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+            updateCartBadge();
+            await loadProducts();
+        });
+
+        // Load products
+        async function loadProducts() {
+            try {
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allProducts = data;
+                displayProducts(allProducts);
+            } catch (error) {
+                console.error("Error loading products:", error);
+            }
+        }
+
+        // Display products
+        function displayProducts(products) {
+            const container = document.getElementById('productsContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (products.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'grid';
+            emptyState.style.display = 'none';
+
+            container.innerHTML = products.map(product => `
+            <div class="product-card" onclick="viewProduct('${product.id}')">
+                <img src="${product.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                     alt="${product.title}" class="product-image">
+                <div class="product-info">
+                    <span class="product-category">${product.category}</span>
+                    <h3 class="product-title">${product.title}</h3>
+                    <p class="product-price">₹${product.price.toLocaleString()}</p>
+                    <p style="color: var(--muted); font-size: 0.9rem;">${product.location || 'Local'}</p>
+                    <button class="btn btn-primary" onclick="event.stopPropagation(); handleAddToCart('${product.id}')" 
+                            style="width: 100%; margin-top: 0.5rem;">Add to Cart</button>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        // Search and filter
+        document.getElementById('searchInput').addEventListener('input', filterProducts);
+        document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+
+        function filterProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+
+            const filtered = allProducts.filter(product => {
+                const title = product.title || '';
+                const description = product.description || '';
+                const matchesSearch = title.toLowerCase().includes(searchTerm) ||
+                    description.toLowerCase().includes(searchTerm);
+                const matchesCategory = !category || product.category === category;
+                return matchesSearch && matchesCategory;
+            });
+
+            displayProducts(filtered);
+        }
+
+        // Add to cart handler
+        window.handleAddToCart = function (productId) {
+            const product = allProducts.find(p => p.id == productId);
+            if (product) {
+                addToCart(product);
+                alert('Added to cart!');
+            }
+        };
+
+        // View product details
+        window.viewProduct = function (productId) {
+            window.location.href = `product-detail.html?id=${productId}`;
+        };
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        });
+    </script>
+
+
+</body>
+
+</html>

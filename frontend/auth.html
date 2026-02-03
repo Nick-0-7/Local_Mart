@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="container">
+    <h2 id="title"></h2>
+
+    <form id="authForm">
+      <input type="text" id="name" placeholder="Full Name">
+      <input type="email" id="email" placeholder="Email">
+      <input type="tel" id="mobile" placeholder="Mobile">
+      <input type="text" id="state" placeholder="State">
+      <input type="text" id="city" placeholder="City">
+      <input type="password" id="password" placeholder="Password">
+
+      <input type="hidden" id="role">
+
+      <span class="error" id="errorMsg"></span>
+      <button type="submit">Create Account</button>
+    </form>
+  </div>
+
+  <script type="module" src="auth.js"></script>
+</body>
+
+</html>
