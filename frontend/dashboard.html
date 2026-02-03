@@ -7,10 +7,8 @@
     <title>Dashboard | LocalMart</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <<<<<<< HEAD <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    =======
-    >>>>>>> 97c3371c49f628a95bed895d8d18367537420bff
     <style>
         * {
             font-family: 'Inter', sans-serif;
@@ -371,7 +369,6 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        <<<<<<< HEAD
 
         /* Map Styles */
         #map {
@@ -382,7 +379,7 @@
             z-index: 1;
         }
 
-        =======>>>>>>>97c3371c49f628a95bed895d8d18367537420bff .error-msg {
+        .error-msg {
             background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
             color: #dc2626;
             padding: 1rem 1.25rem;
@@ -415,7 +412,7 @@
         <ul class="nav-links">
             <li><a href="marketplace.html">Marketplace</a></li>
             <li><a href="analytics.html">📊 Analytics</a></li>
-            <li><a href="orders.html">📦 Orders</a></li>
+
             <li class="cart-icon">
                 <a href="cart.html">🛒 Cart</a>
                 <span class="cart-badge" id="cartBadge">0</span>
@@ -446,11 +443,7 @@
                     <h3 class="action-title">My Cart</h3>
                     <p class="action-desc">Review items & checkout</p>
                 </div>
-                <div class="action-card" onclick="window.location.href='orders.html'">
-                    <div class="action-icon">📦</div>
-                    <h3 class="action-title">My Orders</h3>
-                    <p class="action-desc">Track your purchases</p>
-                </div>
+
             </div>
         </div>
 
@@ -459,9 +452,7 @@
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('products')">📦 My Products</button>
                 <button class="tab" onclick="switchTab('add')">➕ Add New Product</button>
-                <<<<<<< HEAD <button class="tab" onclick="switchTab('settings')">⚙️ Store Settings</button>
-                    =======
-                    >>>>>>> 97c3371c49f628a95bed895d8d18367537420bff
+                <button class="tab" onclick="switchTab('settings')">⚙️ Store Settings</button>
             </div>
 
             <!-- Products List Tab -->
@@ -553,6 +544,12 @@
                 <div class="product-form">
                     <h2 class="form-section-title">Store Settings</h2>
                     <form id="storeSettingsForm">
+                        <div class="form-group">
+                            <label>Mobile Number</label>
+                            <input type="tel" id="mobile" class="form-control" placeholder="+91 9876543210"
+                                pattern="[0-9+\s-]+" title="Please enter a valid mobile number">
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Opening Time</label>
@@ -629,10 +626,7 @@
                     if (userData.role === 'seller') {
                         document.getElementById('sellerContent').style.display = 'block';
                         loadSellerProducts();
-<<<<<<< HEAD
                         loadStoreSettings(); // Load settings if seller
-=======
->>>>>>> 97c3371c49f628a95bed895d8d18367537420bff
                     } else {
                         document.getElementById('buyerContent').style.display = 'block';
                     }
@@ -652,7 +646,6 @@
             if (tab === 'products') {
                 document.querySelector('.tab:nth-child(1)').classList.add('active');
                 document.getElementById('productsTab').classList.add('active');
-<<<<<<< HEAD
             } else if (tab === 'add') {
                 document.querySelector('.tab:nth-child(2)').classList.add('active');
                 document.getElementById('addTab').classList.add('active');
@@ -662,139 +655,6 @@
                 setTimeout(() => { map.invalidateSize(); }, 200); // Fix map render issue in hidden tab
             }
         };
-
-        // Initialize Map
-        let map = L.map('map').setView([20.5937, 78.9629], 5); // Default to India
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        let marker;
-
-        map.on('click', function (e) {
-            const { lat, lng } = e.latlng;
-            setMarker(lat, lng);
-        });
-
-        // Search Location (Geocoding)
-        document.getElementById('searchLocationBtn').addEventListener('click', async () => {
-            const query = document.getElementById('locationSearch').value;
-            if (!query) return;
-
-            const btn = document.getElementById('searchLocationBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳';
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-                const results = await response.json();
-
-                if (results && results.length > 0) {
-                    const { lat, lon, display_name } = results[0];
-                    const latitude = parseFloat(lat);
-                    const longitude = parseFloat(lon);
-
-                    setMarker(latitude, longitude);
-                    map.setView([latitude, longitude], 14); // Zoom in closer
-                    marker.bindPopup(display_name).openPopup(); // Highlight result
-                } else {
-                    alert('Location not found. Please try a different query.');
-                }
-            } catch (error) {
-                console.error("Geocoding error:", error);
-                alert('Failed to search location.');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        });
-
-        function setMarker(lat, lng) {
-            if (marker) {
-                marker.setLatLng([lat, lng]);
-            } else {
-                marker = L.marker([lat, lng]).addTo(map);
-            }
-            document.getElementById('latitude').value = lat;
-            document.getElementById('longitude').value = lng;
-            document.getElementById('latDisplay').textContent = lat.toFixed(4);
-            document.getElementById('lngDisplay').textContent = lng.toFixed(4);
-        }
-
-        // Load Store Settings
-        function loadStoreSettings() {
-            if (!userData) return;
-
-            if (userData.opening_time) {
-                document.getElementById('openTime').value = userData.opening_time;
-                updateTimeDisplay('openTime', 'openTimeDisplay');
-            }
-            if (userData.closing_time) {
-                document.getElementById('closeTime').value = userData.closing_time;
-                updateTimeDisplay('closeTime', 'closeTimeDisplay');
-            }
-
-            if (userData.latitude && userData.longitude) {
-                setMarker(userData.latitude, userData.longitude);
-                map.setView([userData.latitude, userData.longitude], 13);
-            } else {
-                // Try to get user location
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(position => {
-                        const { latitude, longitude } = position.coords;
-                        map.setView([latitude, longitude], 13);
-                    });
-                }
-            }
-        }
-
-        // Save Store Settings
-        document.getElementById('storeSettingsForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('saveSettingsBtn');
-            const errorMsg = document.getElementById('settingsErrorMsg');
-
-            btn.disabled = true;
-            btn.textContent = "Saving...";
-            errorMsg.textContent = "";
-
-            try {
-                const updates = {
-                    opening_time: document.getElementById('openTime').value,
-                    closing_time: document.getElementById('closeTime').value,
-                    latitude: parseFloat(document.getElementById('latitude').value) || null,
-                    longitude: parseFloat(document.getElementById('longitude').value) || null
-                };
-
-                const { error } = await supabase
-                    .from('profiles')
-                    .update(updates)
-                    .eq('id', currentUser.id);
-
-                if (error) throw error;
-
-                // Update local user data
-                userData = { ...userData, ...updates };
-                alert("Store settings saved successfully!");
-
-            } catch (error) {
-                console.error("Error saving settings:", error);
-                errorMsg.textContent = "Failed to save settings. " + error.message;
-            } finally {
-                btn.disabled = false;
-                btn.textContent = "💾 Save Settings";
-            }
-        });
-
-=======
-            } else {
-                document.querySelector('.tab:nth-child(2)').classList.add('active');
-                document.getElementById('addTab').classList.add('active');
-            }
-        };
-
->>>>>>> 97c3371c49f628a95bed895d8d18367537420bff
         // Load seller products
         async function loadSellerProducts() {
             try {
@@ -907,11 +767,7 @@
                     .from('products')
                     .insert([
                         {
-<<<<<<< HEAD
                             seller_id: currentUser.id, // This MUST match auth.uid()
-=======
-                            seller_id: currentUser.id,
->>>>>>> 97c3371c49f628a95bed895d8d18367537420bff
                             title: document.getElementById('title').value,
                             description: document.getElementById('description').value,
                             price: parseFloat(document.getElementById('price').value),
@@ -940,7 +796,7 @@
             }
         });
 
-<<<<<<< HEAD
+
 
         // AM/PM Format Helper
         function formatTime12Hour(timeStr) {
@@ -961,8 +817,129 @@
         document.getElementById('openTime').addEventListener('input', () => updateTimeDisplay('openTime', 'openTimeDisplay'));
         document.getElementById('closeTime').addEventListener('input', () => updateTimeDisplay('closeTime', 'closeTimeDisplay'));
 
-=======
->>>>>>> 97c3371c49f628a95bed895d8d18367537420bff
+        // Store Settings Logic
+        let map, marker;
+
+        async function loadStoreSettings() {
+            if (!userData) return;
+
+            // Set values
+            if (userData.mobile) document.getElementById('mobile').value = userData.mobile;
+            if (userData.opening_time) document.getElementById('openTime').value = userData.opening_time;
+            if (userData.closing_time) document.getElementById('closeTime').value = userData.closing_time;
+
+            updateTimeDisplay('openTime', 'openTimeDisplay');
+            updateTimeDisplay('closeTime', 'closeTimeDisplay');
+
+            // Initialize Map
+            if (!map) {
+                try {
+                    map = L.map('map').setView([20.5937, 78.9629], 5); // India center
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(map);
+
+                    map.on('click', onMapClick);
+                } catch (e) {
+                    console.error("Map init error:", e);
+                }
+            }
+
+            // Set existing location
+            if (userData.latitude && userData.longitude) {
+                const lat = userData.latitude;
+                const lng = userData.longitude;
+                updateMapLocation(lat, lng);
+            }
+        }
+
+        function onMapClick(e) {
+            updateMapLocation(e.latlng.lat, e.latlng.lng);
+        }
+
+        function updateMapLocation(lat, lng) {
+            if (marker) {
+                marker.setLatLng([lat, lng]);
+            } else {
+                if (map) marker = L.marker([lat, lng]).addTo(map);
+            }
+            if (map) map.setView([lat, lng], 13);
+
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            document.getElementById('latDisplay').textContent = lat.toFixed(4);
+            document.getElementById('lngDisplay').textContent = lng.toFixed(4);
+        }
+
+        // Search Location
+        document.getElementById('searchLocationBtn').addEventListener('click', async () => {
+            const query = document.getElementById('locationSearch').value;
+            if (!query) return;
+
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    const lat = parseFloat(data[0].lat);
+                    const lon = parseFloat(data[0].lon);
+                    updateMapLocation(lat, lon);
+                } else {
+                    alert('Location not found');
+                }
+            } catch (error) {
+                console.error("Geocoding error:", error);
+                alert('Error searching location');
+            }
+        });
+
+        // Save Settings
+        document.getElementById('storeSettingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveSettingsBtn');
+            const errorMsg = document.getElementById('settingsErrorMsg');
+
+            btn.disabled = true;
+            btn.textContent = "Saving...";
+            errorMsg.textContent = "";
+
+            try {
+                const updates = {
+                    mobile: document.getElementById('mobile').value,
+                    opening_time: document.getElementById('openTime').value,
+                    closing_time: document.getElementById('closeTime').value,
+                    latitude: parseFloat(document.getElementById('latitude').value) || null,
+                    longitude: parseFloat(document.getElementById('longitude').value) || null
+                };
+
+                const { error } = await supabase
+                    .from('profiles')
+                    .update(updates)
+                    .eq('id', currentUser.id);
+
+                if (error) throw error;
+
+                alert('Store settings saved successfully!');
+
+                // Refresh user data
+                const { data: updatedProfile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (updatedProfile) userData = updatedProfile;
+
+            } catch (error) {
+                console.error("Error saving settings:", error);
+                errorMsg.textContent = "Failed to save settings: " + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "💾 Save Settings";
+            }
+        });
+
+
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await supabase.auth.signOut();
