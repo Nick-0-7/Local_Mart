@@ -155,10 +155,13 @@
 
     .bg-video {
       position: fixed;
-      right: 0;
-      bottom: 0;
+      top: 50%;
+      left: 50%;
       min-width: 100%;
       min-height: 100%;
+      width: auto;
+      height: auto;
+      transform: translate(-50%, -50%);
       object-fit: cover;
       z-index: -1;
       /* keep video behind content */
@@ -355,7 +358,24 @@
       }
     }
 
-    @media (max-width:600px) {
+    @media (max-width: 600px) {
+      .navbar {
+        flex-direction: column;
+        padding: 10px;
+      }
+
+      .navbar ul {
+        flex-direction: column;
+        width: 100%;
+        text-align: center;
+        gap: 10px;
+        padding-top: 10px;
+      }
+
+      .navbar ul li {
+        margin: 5px 0;
+      }
+
       .features {
         grid-template-columns: 1fr;
       }
@@ -366,6 +386,14 @@
 
       .choice-btn {
         width: 100%;
+      }
+
+      .content .name h2 {
+        font-size: 28px !important;
+      }
+
+      .content img {
+        transform: translateY(-500px) scale(0.8);
       }
     }
   </style>

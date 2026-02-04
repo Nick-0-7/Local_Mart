@@ -248,6 +248,19 @@
       .form-row {
         grid-template-columns: 1fr;
       }
+
+      .input-group-row {
+        flex-direction: column;
+      }
+
+      .input-group-row button {
+        width: 100%;
+      }
+    }
+
+    .input-group-row {
+      display: flex;
+      gap: 0.5rem;
     }
   </style>
 </head>
@@ -270,7 +283,7 @@
 
         <div class="form-group">
           <label>Email Address</label>
-          <div style="display: flex; gap: 0.5rem;">
+          <div class="input-group-row">
             <input type="email" id="email" class="form-control" placeholder="john@example.com" required
               style="flex: 1;">
             <button type="button" id="sendOtpBtn" class="btn-secondary"
