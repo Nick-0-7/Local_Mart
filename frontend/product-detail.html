@@ -74,9 +74,40 @@
 
         .product-detail-image {
             width: 100%;
-            max-height: 500px;
-            object-fit: cover;
+            height: 400px;
+            /* Fixed height for consistency */
+            object-fit: contain;
+            /* Ensure full product is visible */
             border-radius: 12px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            background: white;
+            /* Clean background for transparent images */
+            border: 1px solid #e5e7eb;
+        }
+
+        .image-gallery {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .gallery-thumb {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .gallery-thumb:hover,
+        .gallery-thumb.active {
+            border-color: #6366f1;
+            transform: scale(1.05);
         }
 
         @media (max-width: 768px) {
@@ -185,11 +216,31 @@
             window.currentProduct = product;
             window.currentSeller = seller;
 
+            // Prepare images
+            let images = product.images || [];
+            if (images.length === 0 && product.image_url) {
+                images = [product.image_url];
+            } else if (images.length === 0) {
+                images = ['https://via.placeholder.com/500?text=No+Image'];
+            }
+
+            // Ensure main image is first
+            const mainImage = images[0];
+
             document.getElementById('productDetail').innerHTML = `
             <div class="product-detail">
                 <div>
-                    <img src="${product.image_url || 'https://via.placeholder.com/500?text=No+Image'}" 
-                         alt="${product.title}" class="product-detail-image">
+                    <img src="${mainImage}" id="mainImage" alt="${product.title}" class="product-detail-image">
+                    
+                    ${images.length > 1 ? `
+                        <div class="image-gallery">
+                            ${images.map((img, index) => `
+                                <img src="${img}" 
+                                     class="gallery-thumb ${index === 0 ? 'active' : ''}" 
+                                     onclick="changeMainImage('${img}', this)">
+                            `).join('')}
+                        </div>
+                    ` : ''}
                 </div>
                 <div>
                     <span class="product-category">${product.category}</span>
@@ -235,6 +286,20 @@
             </div>
         `;
         }
+
+        // Change main image
+        window.changeMainImage = function (src, thumb) {
+            const mainImg = document.getElementById('mainImage');
+            mainImg.style.opacity = '0';
+            setTimeout(() => {
+                mainImg.src = src;
+                mainImg.style.opacity = '1';
+            }, 200);
+
+            // Update active state
+            document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+        };
 
         async function loadReviews() {
             try {

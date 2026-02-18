@@ -621,7 +621,7 @@
 
                         <div class="form-group">
                             <label>Product Image</label>
-                            <input type="file" id="imageFile" class="form-control" accept="image/*">
+                            <input type="file" id="imageFile" class="form-control" accept="image/*" multiple>
                             <small style="color: #6b7280; display: block; margin-top: 0.5rem;">Upload a product image
                                 (optional)</small>
                             <div id="imagePreview" style="display: none;">
@@ -811,16 +811,34 @@
             }
         };
 
-        // Image preview
+        // Image preview (Multiple)
         document.getElementById('imageFile').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('previewImg').src = e.target.result;
-                    document.getElementById('imagePreview').style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+            const files = e.target.files;
+            const previewContainer = document.getElementById('imagePreview');
+            previewContainer.innerHTML = ''; // Clear previous
+
+            if (files && files.length > 0) {
+                previewContainer.style.display = 'flex';
+                previewContainer.style.gap = '10px';
+                previewContainer.style.flexWrap = 'wrap';
+                previewContainer.style.marginTop = '1rem';
+
+                Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.style.width = '100px';
+                        img.style.height = '100px';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '8px';
+                        img.style.border = '1px solid #ddd';
+                        previewContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                previewContainer.style.display = 'none';
             }
         });
 
@@ -836,25 +854,37 @@
 
             try {
                 let imageUrl = '';
+                let imagesArray = [];
 
-                // Upload image if provided (to Supabase Storage 'products' bucket)
-                const imageFile = document.getElementById('imageFile').files[0];
-                if (imageFile) {
-                    const fileExt = imageFile.name.split('.').pop();
-                    const fileName = `${Date.now()}.${fileExt}`;
-                    const filePath = `products/${fileName}`;
+                // Upload images if provided (to Supabase Storage 'products' bucket)
+                const imageFiles = document.getElementById('imageFile').files;
+                
+                if (imageFiles && imageFiles.length > 0) {
+                    // Upload all files in parallel
+                    const uploadPromises = Array.from(imageFiles).map(async (file) => {
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                        const filePath = `products/${fileName}`;
 
-                    const { error: uploadError, data } = await supabase.storage
-                        .from('products')
-                        .upload(filePath, imageFile);
+                        const { error: uploadError } = await supabase.storage
+                            .from('products')
+                            .upload(filePath, file);
 
-                    if (uploadError) throw uploadError;
+                        if (uploadError) throw uploadError;
 
-                    const { data: { publicUrl } } = supabase.storage
-                        .from('products')
-                        .getPublicUrl(filePath);
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('products')
+                            .getPublicUrl(filePath);
+                        
+                        return publicUrl;
+                    });
 
-                    imageUrl = publicUrl;
+                    imagesArray = await Promise.all(uploadPromises);
+                    
+                    // Set the first image as the main image_url for backward compatibility
+                    if (imagesArray.length > 0) {
+                        imageUrl = imagesArray[0];
+                    }
                 }
 
                 btn.textContent = "Listing...";
@@ -872,6 +902,7 @@
                             condition: document.getElementById('condition').value,
                             location: document.getElementById('location').value,
                             image_url: imageUrl,
+                            images: imagesArray, // New column
                             avg_rating: 0,
                             review_count: 0
                         }

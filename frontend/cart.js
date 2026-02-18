@@ -29,7 +29,7 @@ export function addToCart(product, quantity = 1) {
             id: product.id,
             title: product.title,
             price: product.price,
-            imageUrl: product.imageUrl,
+            imageUrl: product.image_url || product.imageUrl,
             sellerId: product.sellerId,
             sellerName: product.sellerName,
             quantity: quantity
