@@ -498,6 +498,47 @@
                 /* Full width buttons on mobile */
             }
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: #333;
+            text-decoration: none;
+        }
     </style>
 </head>
 
@@ -683,6 +724,68 @@
         </div>
     </div>
 
+    <!-- Edit Product Modal -->
+    <div id="editProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeEditModal()">&times;</span>
+            <h2 class="form-section-title">Edit Product</h2>
+            <form id="editProductForm">
+                <input type="hidden" id="editProductId">
+
+                <div class="form-group">
+                    <label>Product Title</label>
+                    <input type="text" id="editTitle" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="editDescription" class="form-control" rows="4" required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Price (₹)</label>
+                        <input type="number" id="editPrice" class="form-control" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" id="editQuantity" class="form-control" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="editCategory" class="form-control" required>
+                            <option value="electronics">📱 Electronics</option>
+                            <option value="furniture">🛋️ Furniture</option>
+                            <option value="clothing">👕 Clothing</option>
+                            <option value="groceries">🥬 Groceries</option>
+                            <option value="books">📚 Books</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Condition</label>
+                        <select id="editCondition" class="form-control" required>
+                            <option value="new">✨ New</option>
+                            <option value="like-new">⭐ Like New</option>
+                            <option value="good">👍 Good</option>
+                            <option value="fair">👌 Fair</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="editLocation" class="form-control" required>
+                </div>
+
+                <div class="error-msg" id="editErrorMsg"></div>
+                <button type="submit" class="btn-primary" id="updateBtn" style="width: 100%;">💾 Update Product</button>
+            </form>
+        </div>
+    </div>
+
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -778,6 +881,9 @@
         }
 
         function displayProducts(products) {
+            // Attach original product data to window to access in edit modal
+            window.sellerProductsData = products;
+
             document.getElementById('myProducts').innerHTML = products.map(product => `
             <div class="product-card">
                 <img src="${product.image_url || 'https://via.placeholder.com/300x220?text=No+Image'}" 
@@ -787,7 +893,10 @@
                     <h3 class="product-title">${product.title}</h3>
                     <p class="product-price">₹${product.price.toLocaleString()}</p>
                     <p style="color: #6b7280; font-size: 0.9rem; margin: 0.5rem 0;">Stock: ${product.quantity} units</p>
-                    <button onclick="deleteProduct('${product.id}')" class="btn-delete">🗑️ Delete</button>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                        <button onclick="openEditModal('${product.id}')" class="btn-primary" style="flex: 1; min-width: 0; padding: 0.75rem;">✏️ Edit</button>
+                        <button onclick="deleteProduct('${product.id}')" class="btn-delete" style="flex: 1; margin-top: 0;">🗑️ Delete</button>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -842,6 +951,76 @@
             }
         });
 
+        // Edit Modal Logic
+        window.openEditModal = function (productId) {
+            const product = window.sellerProductsData.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById('editProductId').value = product.id;
+            document.getElementById('editTitle').value = product.title;
+            document.getElementById('editDescription').value = product.description;
+            document.getElementById('editPrice').value = product.price;
+            document.getElementById('editQuantity').value = product.quantity;
+            document.getElementById('editCategory').value = product.category;
+            document.getElementById('editCondition').value = product.condition;
+            document.getElementById('editLocation').value = product.location;
+
+            document.getElementById('editErrorMsg').textContent = '';
+            document.getElementById('editProductModal').style.display = 'block';
+        };
+
+        window.closeEditModal = function () {
+            document.getElementById('editProductModal').style.display = 'none';
+        };
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('editProductModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        };
+
+        document.getElementById('editProductForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('updateBtn');
+            const errorMsg = document.getElementById('editErrorMsg');
+            const productId = document.getElementById('editProductId').value;
+
+            btn.disabled = true;
+            btn.textContent = "Updating...";
+            errorMsg.textContent = "";
+
+            try {
+                const updates = {
+                    title: document.getElementById('editTitle').value,
+                    description: document.getElementById('editDescription').value,
+                    price: parseFloat(document.getElementById('editPrice').value),
+                    quantity: parseInt(document.getElementById('editQuantity').value),
+                    category: document.getElementById('editCategory').value,
+                    condition: document.getElementById('editCondition').value,
+                    location: document.getElementById('editLocation').value
+                };
+
+                const { error } = await supabase
+                    .from('products')
+                    .update(updates)
+                    .eq('id', productId);
+
+                if (error) throw error;
+
+                closeEditModal();
+                loadSellerProducts(); // Refresh the list
+                alert('Product updated successfully!');
+            } catch (error) {
+                console.error("Error updating product:", error);
+                errorMsg.textContent = "Failed to update: " + error.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "💾 Update Product";
+            }
+        });
+
         // Add product
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -858,7 +1037,7 @@
 
                 // Upload images if provided (to Supabase Storage 'products' bucket)
                 const imageFiles = document.getElementById('imageFile').files;
-                
+
                 if (imageFiles && imageFiles.length > 0) {
                     // Upload all files in parallel
                     const uploadPromises = Array.from(imageFiles).map(async (file) => {
@@ -875,12 +1054,12 @@
                         const { data: { publicUrl } } = supabase.storage
                             .from('products')
                             .getPublicUrl(filePath);
-                        
+
                         return publicUrl;
                     });
 
                     imagesArray = await Promise.all(uploadPromises);
-                    
+
                     // Set the first image as the main image_url for backward compatibility
                     if (imagesArray.length > 0) {
                         imageUrl = imagesArray[0];
