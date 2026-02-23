@@ -173,12 +173,19 @@
         import { addToCart, updateCartBadge } from './cart.js';
         import { submitReview, getProductReviews, renderStars } from './reviews.js';
 
-        // Get product ID from URL
+        // Get product ID from URL or fallback
         const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get('id');
+        let productId = urlParams.get('id');
 
-        if (!productId) {
-            window.location.href = 'marketplace.html';
+        // Check for missing or literal 'undefined' IDs due to potential caching/URL rewriting issues
+        if (!productId || productId === 'undefined') {
+            productId = localStorage.getItem('selectedProductId');
+        }
+
+        if (!productId || productId === 'undefined') {
+            window.location.replace('marketplace.html');
+            // Halt script execution so loadProduct doesn't fire with a bad ID
+            throw new Error('Halt: Invalid product ID');
         }
 
         // Load product
@@ -191,22 +198,33 @@
                     .single();
 
                 if (error || !product) {
-                    alert('Product not found');
-                    window.location.href = 'marketplace.html';
+                    console.error("Product fetch error:", error);
+                    alert('Product not found or error loading.');
+                    window.location.replace('marketplace.html');
                     return;
                 }
 
-                // Fetch seller details
-                const { data: seller, error: sellerError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', product.seller_id)
-                    .single();
+                // Fetch seller details - handle missing seller gracefully
+                let seller = null;
+                if (product.seller_id) {
+                    const { data, error: sellerError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', product.seller_id)
+                        .single();
+                    if (!sellerError) {
+                        seller = data;
+                    } else {
+                        console.warn("Seller fetch error:", sellerError);
+                    }
+                }
 
                 displayProduct(product, seller);
                 loadReviews();
             } catch (error) {
-                console.error("Error loading product:", error);
+                console.error("Unexpected error loading product:", error);
+                alert("An unexpected error occurred while loading product details.");
+                window.location.replace('marketplace.html');
             }
         }
 
@@ -263,6 +281,9 @@
 
                     <button id="interestedBtn" class="btn-interested" onclick="handleVisitInquiry()">
                         ✨ I'm Interested / Visit Shop
+                    </button>
+                    <button class="btn btn-primary" onclick="handleAddToCart()" style="width: 100%; margin-top: 1rem; padding: 1rem; font-size: 1.1rem; border-radius: 12px;">
+                        🛒 Add to Cart
                     </button>
 
                     <!-- Hidden Seller Info Section -->
@@ -394,6 +415,13 @@
             } catch (e) {
                 console.error("Error creating inquiry:", e);
                 // Don't block UI if this fails
+            }
+        };
+
+        window.handleAddToCart = function () {
+            if (window.currentProduct) {
+                addToCart(window.currentProduct);
+                alert('Added to cart!');
             }
         };
 

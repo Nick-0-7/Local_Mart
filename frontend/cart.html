@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <title>Shopping Cart | LocalMart</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         body {
             margin: 0;
@@ -34,6 +37,54 @@
             .cart-summary {
                 position: static;
             }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: #333;
+            text-decoration: none;
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 12px;
+            margin-top: 1rem;
         }
     </style>
 </head>
@@ -78,8 +129,8 @@
                             <span id="total">₹0</span>
                         </div>
                     </div>
-                    <button class="btn btn-primary" style="width: 100%;" onclick="checkout()">Proceed to
-                        Checkout</button>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="openMapModal()">Direct to Shop
+                        📍</button>
                     <button onclick="clearCartHandler()"
                         style="margin-top: 0.5rem; background: white; color: #ef4444; border: 1px solid #ef4444; width: 100%; padding: 0.75rem; border-radius: 8px; cursor: pointer;">Clear
                         Cart</button>
@@ -88,6 +139,18 @@
         </div>
     </div>
 
+    <!-- Map Modal -->
+    <div id="shopMapModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeMapModal()">&times;</span>
+            <h2 style="margin-top: 0;">Store Locations</h2>
+            <p style="color: #6b7280; margin-bottom: 1rem;">Here is where you can find the items in your cart.</p>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script type="module">
@@ -151,60 +214,121 @@
             }
         };
 
-        window.checkout = async function () {
+        // Map Modal Logic
+        let map;
+        let markers = [];
+
+        window.openMapModal = async function () {
             const cart = getCart();
             if (cart.length === 0) return;
 
             const btn = event.target;
+            const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.textContent = "Processing...";
+            btn.innerHTML = "Opening Map... ⏳";
 
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                const user = session?.user;
+                // Get unique seller IDs from the cart
+                const sellerIds = [...new Set(cart.map(item => item.seller_id).filter(id => id))];
 
-                if (!user) {
-                    alert('Please login to checkout');
-                    window.location.href = 'index.html';
+                if (sellerIds.length === 0) {
+                    alert('No store locations found for the items in your cart.');
                     return;
                 }
 
-                // Get profile data
-                const { data: profile } = await supabase
+                // Fetch seller profiles to get locations
+                const { data: sellers, error } = await supabase
                     .from('profiles')
-                    .select('full_name')
-                    .eq('id', user.id)
-                    .single();
+                    .select('id, full_name, latitude, longitude')
+                    .in('id', sellerIds)
+                    .not('latitude', 'is', null)
+                    .not('longitude', 'is', null);
 
-                // Create order in Supabase
-                const { error: orderError } = await supabase
-                    .from('orders')
-                    .insert([
-                        {
-                            buyer_id: user.id,
-                            items: cart.map(item => ({
-                                id: item.id,
-                                title: item.title,
-                                price: item.price,
-                                quantity: item.quantity,
-                                seller_id: item.seller_id,
-                                image_url: item.image_url
-                            })),
-                            total_amount: getCartTotal(),
-                            status: "pending"
-                        }
-                    ]);
+                if (error) throw error;
 
-                if (orderError) throw orderError;
+                if (!sellers || sellers.length === 0) {
+                    alert('None of the sellers in your cart have provided a physical store location.');
+                    return;
+                }
 
-                clearCart();
-                alert('Order placed successfully! 🎉');
-                window.location.href = 'orders.html';
+                // Show the modal
+                document.getElementById('shopMapModal').style.display = 'block';
+
+                // Initialize or reset the map
+                if (!map) {
+                    // Slight delay to ensure modal is visible so Leaflet can calculate dimensions
+                    setTimeout(() => {
+                        map = L.map('map');
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '© OpenStreetMap'
+                        }).addTo(map);
+                        addPinsToMap(sellers);
+                    }, 200);
+                } else {
+                    setTimeout(() => {
+                        map.invalidateSize();
+                        addPinsToMap(sellers);
+                    }, 200);
+                }
+
             } catch (error) {
-                console.error("Checkout error:", error);
-                alert('Failed to place order. ' + (error.message || 'Please try again.'));
+                console.error("Map error:", error);
+                alert('Failed to load store locations. ' + (error.message || ''));
+            } finally {
                 btn.disabled = false;
-                btn.textContent = "Proceed to Checkout";
+                btn.innerHTML = originalText;
+            }
+        };
+
+        function addPinsToMap(sellers) {
+            // Remove existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            const bounds = L.latLngBounds();
+
+            sellers.forEach(seller => {
+                const marker = L.marker([seller.latitude, seller.longitude]).addTo(map);
+
+                // Get all items in cart from this seller
+                const sellerItems = getCart().filter(item => item.seller_id === seller.id);
+                const itemsList = sellerItems.map(item => `<li>${item.title} (x${item.quantity})</li>`).join('');
+
+                marker.bindPopup(`
+                    <div style="min-width: 150px;">
+                        <h3 style="margin: 0 0 8px 0; color: #10b981;">${seller.full_name || 'Local Store'}</h3>
+                        <p style="margin: 0 0 4px 0; font-weight: bold;">Items to pickup:</p>
+                        <ul style="margin: 0; padding-left: 16px; font-size: 0.9em;">
+                            ${itemsList}
+                        </ul>
+                        <button onclick="window.open('https://maps.google.com/?q=${seller.latitude},${seller.longitude}', '_blank')" 
+                            style="margin-top: 10px; width: 100%; padding: 6px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Navigate Here ↗️
+                        </button>
+                    </div>
+                `);
+
+                markers.push(marker);
+                bounds.extend([seller.latitude, seller.longitude]);
+            });
+
+            // Adjust map view to fit all pins
+            if (sellers.length === 1) {
+                map.setView([sellers[0].latitude, sellers[0].longitude], 14);
+            } else {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        window.closeMapModal = function () {
+            document.getElementById('shopMapModal').style.display = 'none';
+        };
+
+        // Close modal when clicking outside of it
+        window.onclick = function (event) {
+            const modal = document.getElementById('shopMapModal');
+            if (event.target === modal) {
+                closeMapModal();
             }
         };
 

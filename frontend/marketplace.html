@@ -99,7 +99,7 @@
             emptyState.style.display = 'none';
 
             container.innerHTML = products.map(product => `
-            <div class="product-card" onclick="viewProduct('${product.id}')">
+            <div class="product-card" data-id="${product.id}" style="cursor: pointer;">
                 <img src="${product.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}" 
                      alt="${product.title}" class="product-image">
                 <div class="product-info">
@@ -112,6 +112,17 @@
                 </div>
             </div>
         `).join('');
+
+            // Attach event listeners to all cards
+            document.querySelectorAll('.product-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const id = card.dataset.id;
+                    // Provide a fallback in localStorage because local `serve` server strips query parameters on 301 redirects
+                    localStorage.setItem('selectedProductId', id);
+                    window.location.href = `product-detail.html?id=${id}`;
+                });
+            });
         }
 
         // Search and filter
@@ -143,8 +154,9 @@
             }
         };
 
-        // View product details
+        // View product details (legacy fallback)
         window.viewProduct = function (productId) {
+            localStorage.setItem('selectedProductId', productId);
             window.location.href = `product-detail.html?id=${productId}`;
         };
 

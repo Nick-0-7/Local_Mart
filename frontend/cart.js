@@ -18,7 +18,7 @@ export function addToCart(product, quantity = 1) {
     const cart = getCart();
 
     // Check if product already in cart
-    const existingIndex = cart.findIndex(item => item.id === product.id);
+    const existingIndex = cart.findIndex(item => item.id == product.id);
 
     if (existingIndex > -1) {
         // Update quantity
@@ -30,8 +30,7 @@ export function addToCart(product, quantity = 1) {
             title: product.title,
             price: product.price,
             imageUrl: product.image_url || product.imageUrl,
-            sellerId: product.sellerId,
-            sellerName: product.sellerName,
+            seller_id: product.seller_id,
             quantity: quantity
         });
     }
@@ -44,7 +43,7 @@ export function addToCart(product, quantity = 1) {
 // Remove item from cart
 export function removeFromCart(productId) {
     let cart = getCart();
-    cart = cart.filter(item => item.id !== productId);
+    cart = cart.filter(item => item.id != productId);
     saveCart(cart);
     updateCartBadge();
     return cart;
@@ -53,7 +52,7 @@ export function removeFromCart(productId) {
 // Update item quantity
 export function updateQuantity(productId, quantity) {
     const cart = getCart();
-    const item = cart.find(item => item.id === productId);
+    const item = cart.find(item => item.id == productId);
 
     if (item) {
         if (quantity <= 0) {
