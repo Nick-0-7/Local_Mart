@@ -953,7 +953,7 @@
 
         // Edit Modal Logic
         window.openEditModal = function (productId) {
-            const product = window.sellerProductsData.find(p => p.id === productId);
+            const product = window.sellerProductsData.find(p => p.id == productId);
             if (!product) return;
 
             document.getElementById('editProductId').value = product.id;
@@ -1039,15 +1039,15 @@
                 const imageFiles = document.getElementById('imageFile').files;
 
                 if (imageFiles && imageFiles.length > 0) {
-                    // Upload all files in parallel
-                    const uploadPromises = Array.from(imageFiles).map(async (file) => {
+                    // Upload files sequentially to prevent browser network hang
+                    for (const file of Array.from(imageFiles)) {
                         const fileExt = file.name.split('.').pop();
                         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
                         const filePath = `products/${fileName}`;
 
                         const { error: uploadError } = await supabase.storage
                             .from('products')
-                            .upload(filePath, file);
+                            .upload(filePath, file, { cacheControl: '3600', upsert: false });
 
                         if (uploadError) throw uploadError;
 
@@ -1055,10 +1055,8 @@
                             .from('products')
                             .getPublicUrl(filePath);
 
-                        return publicUrl;
-                    });
-
-                    imagesArray = await Promise.all(uploadPromises);
+                        imagesArray.push(publicUrl);
+                    }
 
                     // Set the first image as the main image_url for backward compatibility
                     if (imagesArray.length > 0) {
@@ -1095,7 +1093,7 @@
                 loadSellerProducts();
             } catch (error) {
                 console.error("Error adding product:", error);
-                errorMsg.textContent = "Failed to list product. " + error.message;
+                errorMsg.textContent = "Failed to list product. " + (error.message || JSON.stringify(error) || "Unknown error");
             } finally {
                 btn.disabled = false;
                 btn.textContent = "🚀 List Product";
