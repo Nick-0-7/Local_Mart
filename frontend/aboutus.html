@@ -11,31 +11,113 @@
         body {
             margin: 0;
             background: #f7f9fc;
+            font-family: 'Inter', sans-serif;
         }
 
         .about-container {
             max-width: 800px;
-            margin: 4rem auto;
+            margin: 1.2rem auto 1rem;
             background: white;
-            padding: 3rem;
+            padding: 1.8rem 2rem;
             border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
         }
 
         .about-title {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 0.8rem;
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-align: center;
         }
 
         .about-content {
-            font-size: 1.1rem;
+            font-size: 0.97rem;
             color: #4b5563;
-            line-height: 1.8;
-            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+
+        .about-content h3 {
+            color: #1e293b;
+            font-size: 1rem;
+            margin: 0 0 0.3rem;
+        }
+
+        .about-content p {
+            margin: 0 0 0.2rem;
+        }
+
+        .about-content hr {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 0.6rem 0;
+        }
+
+        .dev-section {
+            max-width: 800px;
+            margin: 0 auto 1.5rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+
+        .dev-section h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 4px;
+        }
+
+        .dev-section p {
+            color: #6b7280;
+            font-size: 0.88rem;
+            margin: 0 0 1rem;
+        }
+
+        .team-row {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .member-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px 16px;
+            width: 180px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .member-card img {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            object-fit: cover;
+            object-position: center top;
+            border: 3px solid #10b981;
+            margin-bottom: 8px;
+            display: block;
+            background: #e2e8f0;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.88rem;
+        }
+
+        .member-role {
+            font-size: 0.75rem;
+            color: #10b981;
+            margin-top: 2px;
         }
     </style>
 </head>
@@ -50,17 +132,95 @@
         </ul>
     </nav>
 
-    <div class="container">
+    <div style="padding: 0 16px;">
+
+        <!-- About Card -->
         <div class="about-container">
             <h1 class="about-title">About LocalMart</h1>
             <div class="about-content">
-                <!-- Add your About Us details here later -->
-                <p>Welcome to LocalMart. We are dedicated to connecting local sellers with buyers in the community.</p>
-                <p>More details coming soon...</p>
-            </div>
+                <p><strong>LocalMart</strong> is a hyperlocal electronics marketplace built to make buying and selling
+                    second-hand electronics in your community easy, safe, and transparent.</p>
 
-            <a href="index.html" class="btn btn-primary" style="display: inline-block;">Return Home</a>
+                <hr>
+                <h3>🛒 What We Do</h3>
+                <p>We connect local buyers and sellers of electronics — phones, laptops, accessories, and more. Sellers
+                    list products in minutes; buyers browse verified listings nearby and make secure purchases.</p>
+
+                <hr>
+                <h3>⚙️ How It Works</h3>
+                <p>Sellers sign up, create a store, and list products with photos, descriptions, pricing, and condition.
+                    Buyers filter by category or price, view product details, and add items to their cart.</p>
+
+                <hr>
+                <h3>🔒 Trust & Safety</h3>
+                <p>Every seller is verified via phone and email. Buyer reviews are visible on each listing. All data is
+                    securely stored through <strong>Supabase</strong> (PostgreSQL).</p>
+
+                <hr>
+                <h3>🛠️ Tech Stack</h3>
+                <p>Pure <strong>HTML, CSS & JavaScript</strong> frontend · <strong>Node.js / Express</strong> backend on
+                    Render · <strong>Supabase</strong> for database and auth.</p>
+            </div>
+            <a href="index.html" class="btn btn-primary" style="display:inline-block;margin-top:1rem;">Return Home</a>
         </div>
+
+        <!-- Developed By -->
+        <div class="dev-section">
+            <h2>Developed By</h2>
+            <p>The team that built LocalMart from scratch.</p>
+            <div class="team-row" style="flex-wrap:nowrap;overflow-x:auto;">
+                <div class="member-card">
+                    <img src="member 1.jpeg" alt="Member 1">
+                    <div class="member-name">Nikhil</div>
+                    <!--<div class="member-role">Role</div>-->
+                </div>
+                <div class="member-card">
+                    <img src="member 2.jpeg" alt="Member 2">
+                    <div class="member-name">Ajinkya</div>
+                    <!--<div class="member-role">Role</div>-->
+                </div>
+                <div class="member-card">
+                    <img src="member 3.jpeg" alt="Member 3">
+                    <div class="member-name">Member 3</div>
+                    <!--<div class="member-role">Role</div>-->
+                </div>
+                <div class="member-card">
+                    <img src="member4.jpg" alt="Member 4">
+                    <div class="member-name">Member 4</div>
+                    <!--<div class="member-role">Role</div>-->
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Section -->
+        <div class="dev-section" style="margin-bottom:1.5rem;">
+            <h2>Contact Us</h2>
+            <p>Have a question or feedback? Reach out to us.</p>
+            <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:0.5rem;">
+                <div style="background:#f8fafc;border-radius:10px;padding:14px 20px;min-width:180px;text-align:center;">
+                    <div style="font-size:1.4rem;margin-bottom:6px;">📧</div>
+                    <div style="font-weight:600;color:#1e293b;font-size:0.88rem;">Email</div>
+                    <div style="color:#10b981;font-size:0.82rem;margin-top:2px;">localmartsquard@gmail.com</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:10px;padding:14px 20px;min-width:180px;text-align:center;">
+                    <div style="font-size:1.4rem;margin-bottom:6px;">📞</div>
+                    <div style="font-weight:600;color:#1e293b;font-size:0.88rem;">Phone</div>
+                    <div style="color:#10b981;font-size:0.82rem;margin-top:2px;">+91 98765 43210</div>
+                </div>
+                <div style="background:#f8fafc;border-radius:10px;padding:14px 20px;min-width:180px;text-align:center;">
+                    <div style="font-size:1.4rem;margin-bottom:6px;">📍</div>
+                    <div style="font-weight:600;color:#1e293b;font-size:0.88rem;">Location</div>
+                    <div style="color:#10b981;font-size:0.82rem;margin-top:2px;">Ichalkaranji, India</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Further Development -->
+        <p style="text-align:center;font-size:0.88rem;color:#6b7280;margin:0 0 1.5rem;">
+            🚀 For further development and new projects, visit:
+            <a href="#" style="color:#10b981;font-weight:600;text-decoration:none;">your-link-here.com</a>
+        </p>
+
     </div>
 
 </body>
