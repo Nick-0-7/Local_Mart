@@ -18,6 +18,8 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Auth Pages (Register/Login) */
@@ -285,10 +287,10 @@ body {
     .container {
         padding: 15px;
     }
-    
+
     .product-grid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.5rem;
     }
 }
 
@@ -324,31 +326,56 @@ body {
         gap: 0.75rem;
     }
 
-    .search-input, .filter-select {
+    .search-input,
+    .filter-select {
         width: 100%;
         min-width: auto;
     }
 
     .auth-container {
         margin: 20px auto;
-        padding: 20px;
-        width: 90%;
+        padding: 24px;
+        width: 95%;
     }
-    
+
+    .container {
+        padding: 12px;
+    }
+
     /* Cart Page Mobile Config */
     .cart-item {
         flex-direction: column;
         text-align: center;
+        gap: 1rem;
     }
 
     .cart-item-image {
-        width: 100px;
-        height: 100px;
+        width: 120px;
+        height: 120px;
         margin: 0 auto;
     }
 
     .quantity-controls {
         justify-content: center;
         margin-top: 0.5rem;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Specific fix for very small devices */
+@media (max-width: 480px) {
+    .product-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 1rem;
     }
 }

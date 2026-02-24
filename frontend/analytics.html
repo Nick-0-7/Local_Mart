@@ -11,6 +11,60 @@
             background: #f7f9fc;
         }
 
+        /* --- New Responsive Classes --- */
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .analytics-filter-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .inquiry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .analytics-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .analytics-filter-group {
+                flex-direction: column;
+                width: 100%;
+                align-items: stretch;
+            }
+
+            .analytics-filter-group input,
+            .analytics-filter-group select {
+                width: 100%;
+            }
+
+            .inquiry-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .inquiry-header select {
+                width: 100%;
+            }
+
+            .chart-container {
+                padding: 1rem;
+            }
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -69,13 +123,13 @@
     </nav>
 
     <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div class="analytics-header">
             <h1>Seller Analytics</h1>
-            <div style="display: flex; gap: 1rem; align-items: center;">
+            <div class="analytics-filter-group">
                 <input type="date" id="dateFilter" class="form-control" title="Pick a specific date"
                     style="padding: 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 600; cursor: pointer;">
                 <select id="timeFilter" class="form-control"
-                    style="width: auto; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 600; cursor: pointer;">
+                    style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 600; cursor: pointer;">
                     <option value="all">All Time</option>
                     <option value="today">Today</option>
                     <option value="week">This Week (Last 7 Days)</option>
@@ -109,10 +163,10 @@
             <div id="topProductsChart"></div>
             <p id="noSalesMsg" style="color: var(--muted); display: none;">No sales data yet</p>
             <div class="chart-container" style="margin-top: 2rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div class="inquiry-header">
                     <h2 style="margin: 0;">Visit Inquiries</h2>
                     <select id="inquiryFilter" class="form-control"
-                        style="width: auto; padding: 0.4rem; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.9em; cursor: pointer; font-weight: 600;">
+                        style="padding: 0.4rem; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.9em; cursor: pointer; font-weight: 600;">
                         <option value="all">All Inquiries</option>
                         <option value="pending">Pending Only</option>
                         <option value="sold">Sold Only</option>

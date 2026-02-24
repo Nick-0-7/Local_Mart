@@ -414,6 +414,23 @@
             display: block;
         }
 
+        /* Responsive Layouts */
+        .dashboard-top-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-top-nav {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
         /* Responsive Breakpoints */
 
         /* Tablet & Mobile */
@@ -561,7 +578,7 @@
     </nav>
 
     <div class="container">
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <div class="dashboard-top-nav">
             <button onclick="history.back()"
                 style="background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--primary); font-weight: 600; padding: 0.5rem 0;">←
                 Back</button>
