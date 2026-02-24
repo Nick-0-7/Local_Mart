@@ -98,6 +98,8 @@
             display: inline-block;
             background: linear-gradient(135deg, #10b981 0%, #f97316 100%);
             color: white;
+            -webkit-text-fill-color: white;
+            /* Fix invisible text bug */
             padding: 0.4rem 1rem;
             border-radius: 20px;
             font-size: 0.85rem;
@@ -548,7 +550,7 @@
         <a href="index.html" class="nav-brand">LocalMart</a>
         <ul class="nav-links">
             <li><a href="marketplace.html">Marketplace</a></li>
-            <li><a href="analytics.html">📊 Analytics</a></li>
+            <li id="analyticsLink" style="display: none;"><a href="analytics.html">📊 Analytics</a></li>
 
             <li class="cart-icon">
                 <a href="cart.html">🛒 Cart</a>
@@ -559,12 +561,14 @@
     </nav>
 
     <div class="container">
-        <div class="dashboard-header">
-            <h1 class="welcome-text">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <button onclick="history.back()"
+                style="background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--primary); font-weight: 600; padding: 0.5rem 0;">←
+                Back</button>
+            <h1 class="welcome-text" style="margin: 0;">
                 Welcome, <span id="userName">User</span>
                 <span id="userRole" class="role-badge">...</span>
             </h1>
-            <p id="userEmail" class="user-email"></p>
         </div>
 
         <!-- Buyer Content -->
@@ -805,7 +809,7 @@
             }
 
             currentUser = session.user;
-            document.getElementById('userEmail').textContent = currentUser.email;
+            // Email display element was removed from UI
 
             try {
                 // Get profile data from Supabase Profiles table
@@ -824,10 +828,12 @@
 
                     if (userData.role === 'seller') {
                         document.getElementById('sellerContent').style.display = 'block';
+                        document.getElementById('analyticsLink').style.display = 'block';
                         loadSellerProducts();
                         loadStoreSettings(); // Load settings if seller
                     } else {
                         document.getElementById('buyerContent').style.display = 'block';
+                        document.getElementById('analyticsLink').style.display = 'none';
                     }
                 }
             } catch (e) {

@@ -133,6 +133,11 @@
     </nav>
 
     <div class="container">
+        <div style="margin-bottom: 1rem;">
+            <button onclick="history.back()"
+                style="background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--primary); font-weight: 600; padding: 0.5rem 0;">←
+                Back</button>
+        </div>
         <div id="productDetail"></div>
 
         <!-- Reviews Section -->
@@ -401,17 +406,43 @@
 
             // Create notification record (Order with type 'visit_inquiry')
             try {
-                await supabase.from('orders').insert({
+                // Determine buyer details - fallback to 'Anonymous' if not available in session
+                let buyerName = 'Interested Buyer';
+                let buyerEmail = session.user.email || 'N/A';
+                let buyerMobile = 'Not Provided';
+
+                // Fetch buyer profile for exact details
+                const { data: buyerProfile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (buyerProfile) {
+                    buyerName = buyerProfile.full_name || buyerName;
+                    buyerMobile = buyerProfile.mobile || buyerMobile;
+                }
+
+                const { error } = await supabase.from('orders').insert({
                     buyer_id: session.user.id,
-                    total_amount: window.currentProduct.price,
+                    total_amount: window.currentProduct.price || 0,
                     status: 'visit_inquiry',
-                    items: {
+                    items: [{ // items must be an array of objects
                         product_id: window.currentProduct.id,
                         title: window.currentProduct.title,
                         seller_id: window.currentProduct.seller_id,
-                        note: "Customer is interested to visit"
-                    }
+                        price: window.currentProduct.price,
+                        quantity: 1,
+                        note: "Customer is interested to visit",
+                        buyer_details: {
+                            name: buyerName,
+                            email: buyerEmail,
+                            mobile: buyerMobile
+                        }
+                    }]
                 });
+
+                if (error) throw error;
             } catch (e) {
                 console.error("Error creating inquiry:", e);
                 // Don't block UI if this fails

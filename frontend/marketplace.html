@@ -28,7 +28,12 @@
     </nav>
 
     <div class="container">
-        <h1>Browse Products</h1>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <button onclick="history.back()"
+                style="background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--primary); font-weight: 600; padding: 0.5rem 0;">←
+                Back</button>
+            <h1 style="margin: 0;">Browse Products</h1>
+        </div>
 
         <div class="search-bar">
             <input type="text" id="searchInput" class="search-input" placeholder="Search products...">
@@ -37,6 +42,10 @@
                 <option value="electronics">Electronics</option>
                 <option value="furniture">Furniture</option>
                 <option value="clothing">Clothing</option>
+            </select>
+            <select id="cityFilter" class="filter-select">
+                <option value="">All Cities</option>
+                <!-- Cities populated dynamically -->
             </select>
         </div>
 
@@ -78,10 +87,29 @@
                 if (error) throw error;
 
                 allProducts = data;
+                populateCityFilter(allProducts);
                 displayProducts(allProducts);
             } catch (error) {
                 console.error("Error loading products:", error);
             }
+        }
+
+        function populateCityFilter(products) {
+            const cityFilter = document.getElementById('cityFilter');
+            const uniqueCities = [...new Set(products
+                .map(p => p.location ? p.location.trim() : '')
+                .filter(loc => loc.length > 0)
+            )].sort();
+
+            // Keep the 'All Cities' default option, clear the rest
+            cityFilter.innerHTML = '<option value="">All Cities</option>';
+
+            uniqueCities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                cityFilter.appendChild(option);
+            });
         }
 
         // Display products
@@ -128,18 +156,24 @@
         // Search and filter
         document.getElementById('searchInput').addEventListener('input', filterProducts);
         document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+        document.getElementById('cityFilter').addEventListener('change', filterProducts);
 
         function filterProducts() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const category = document.getElementById('categoryFilter').value;
+            const city = document.getElementById('cityFilter').value;
 
             const filtered = allProducts.filter(product => {
                 const title = product.title || '';
                 const description = product.description || '';
+                const productCity = product.location ? product.location.trim() : '';
+
                 const matchesSearch = title.toLowerCase().includes(searchTerm) ||
                     description.toLowerCase().includes(searchTerm);
                 const matchesCategory = !category || product.category === category;
-                return matchesSearch && matchesCategory;
+                const matchesCity = !city || productCity === city;
+
+                return matchesSearch && matchesCategory && matchesCity;
             });
 
             displayProducts(filtered);
